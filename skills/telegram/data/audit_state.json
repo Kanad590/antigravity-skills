@@ -1,0 +1,140 @@
+{
+  "version": "1.0",
+  "last_audited_id": 277,
+  "resolved_issue_keys": [
+    "trailing_url_193",
+    "false_silence_197",
+    "raw_json_200",
+    "unfulfilled_forward_189",
+    "unfulfilled_forward_191",
+    "trailing_url_224",
+    "trailing_url_253",
+    "junior_mess_232",
+    "junior_mess_236",
+    "junior_mess_241",
+    "junior_mess_243",
+    "junior_mess_245",
+    "junior_mess_247",
+    "junior_mess_249",
+    "junior_mess_251",
+    "junior_mess_253",
+    "trailing_url_261",
+    "trailing_url_267"
+  ],
+  "last_check_time": "2026-11-20 12:40:40",
+  "history": [],
+  "cleanup_history": [
+    {
+      "time": "2026-11-15 14:33:28",
+      "type": "junior_mess_note",
+      "summary": "Junior bot delivered mismatched or hallucinated note for user request: '[Replying to: \"বস, আপনার পয়েন্টটা স্পষ্ট। যখন আপনি কোনো YouT'.",
+      "action": "Auto-compiled and dispatched Math Series Masterclass PDF to Boss.",
+      "status": "Verified ✅"
+    },
+    {
+      "time": "2026-11-15 14:33:28",
+      "type": "junior_mess_general",
+      "summary": "Junior bot encountered friction/error: '[Replying to: \"🎯 ডেইলি রিভিশন কুইজ — WBPSC Clerkship 2026 (Part-I)\n📚 ব'.",
+      "action": "Auto-resolved junior friction turn: Junior bot encountered friction/error: '[Replying ",
+      "status": "Verified ✅"
+    },
+    {
+      "time": "2026-11-15 14:33:32",
+      "type": "junior_mess_music",
+      "summary": "Junior bot created music/playlist mess (wrong track/false status/misclassification) regarding playlist '🥀 Sad.m3u'.",
+      "action": "Purged 'Aarambhame Le' from '🥀 Sad.m3u' on desktop.",
+      "status": "Verified ✅"
+    },
+    {
+      "time": "2026-11-15 14:33:32",
+      "type": "junior_mess_music",
+      "summary": "Junior bot created music/playlist mess (wrong track/false status/misclassification) regarding playlist '🥀 Sad.m3u'.",
+      "action": "Purged 'Aarambhame Le' from '🥀 Sad.m3u' on homeserver & rescanned Navidrome.",
+      "status": "Verified ✅"
+    },
+    {
+      "time": "2026-11-15 14:33:35",
+      "type": "junior_mess_music",
+      "summary": "Junior bot created music/playlist mess (wrong track/false status/misclassification) regarding playlist '🥀 Sad.m3u'.",
+      "action": "Purged 'Aarambhame Le' from '🥀 Sad.m3u' on desktop.",
+      "status": "Verified ✅"
+    },
+    {
+      "time": "2026-11-15 14:33:35",
+      "type": "junior_mess_music",
+      "summary": "Junior bot created music/playlist mess (wrong track/false status/misclassification) regarding playlist '🥀 Sad.m3u'.",
+      "action": "Purged 'Aarambhame Le' from '🥀 Sad.m3u' on homeserver & rescanned Navidrome.",
+      "status": "Verified ✅"
+    },
+    {
+      "time": "2026-11-15 14:33:37",
+      "type": "junior_mess_music",
+      "summary": "Junior bot created music/playlist mess (wrong track/false status/misclassification) regarding playlist '🥀 Sad.m3u'.",
+      "action": "Purged 'যোগ করার অ্যাক্সেস আমার নেই।' from '🥀 Sad.m3u' on desktop.",
+      "status": "Verified ✅"
+    },
+    {
+      "time": "2026-11-15 14:33:37",
+      "type": "junior_mess_music",
+      "summary": "Junior bot created music/playlist mess (wrong track/false status/misclassification) regarding playlist '🥀 Sad.m3u'.",
+      "action": "Purged 'যোগ করার অ্যাক্সেস আমার নেই।' from '🥀 Sad.m3u' on homeserver & rescanned Navidrome.",
+      "status": "Verified ✅"
+    },
+    {
+      "time": "2026-11-15 14:33:39",
+      "type": "junior_mess_music",
+      "summary": "Junior bot created music/playlist mess (wrong track/false status/misclassification) regarding playlist '🥀 Sad.m3u'.",
+      "action": "Purged 'Aarambhame Le' from '🥀 Sad.m3u' on desktop.",
+      "status": "Verified ✅"
+    },
+    {
+      "time": "2026-11-15 14:33:39",
+      "type": "junior_mess_music",
+      "summary": "Junior bot created music/playlist mess (wrong track/false status/misclassification) regarding playlist '🥀 Sad.m3u'.",
+      "action": "Purged 'Aarambhame Le' from '🥀 Sad.m3u' on homeserver & rescanned Navidrome.",
+      "status": "Verified ✅"
+    },
+    {
+      "time": "2026-11-15 14:33:41",
+      "type": "junior_mess_music",
+      "summary": "Junior bot created music/playlist mess (wrong track/false status/misclassification) regarding playlist '🥀 Sad.m3u'.",
+      "action": "Purged 'Aarambhame Le' from '🥀 Sad.m3u' on desktop.",
+      "status": "Verified ✅"
+    },
+    {
+      "time": "2026-11-15 14:33:41",
+      "type": "junior_mess_music",
+      "summary": "Junior bot created music/playlist mess (wrong track/false status/misclassification) regarding playlist '🥀 Sad.m3u'.",
+      "action": "Purged 'Aarambhame Le' from '🥀 Sad.m3u' on homeserver & rescanned Navidrome.",
+      "status": "Verified ✅"
+    },
+    {
+      "time": "2026-11-15 14:33:43",
+      "type": "junior_mess_music",
+      "summary": "Junior bot created music/playlist mess (wrong track/false status/misclassification) regarding playlist '🥀 Sad.m3u'.",
+      "action": "Purged 'Aarambhame Le' from '🥀 Sad.m3u' on desktop.",
+      "status": "Verified ✅"
+    },
+    {
+      "time": "2026-11-15 14:33:43",
+      "type": "junior_mess_music",
+      "summary": "Junior bot created music/playlist mess (wrong track/false status/misclassification) regarding playlist '🥀 Sad.m3u'.",
+      "action": "Purged 'Aarambhame Le' from '🥀 Sad.m3u' on homeserver & rescanned Navidrome.",
+      "status": "Verified ✅"
+    },
+    {
+      "time": "2026-11-15 14:33:45",
+      "type": "junior_mess_music",
+      "summary": "Junior bot created music/playlist mess (wrong track/false status/misclassification) regarding playlist '🥀 Sad.m3u'.",
+      "action": "Purged 'Aarambhame Le' from '🥀 Sad.m3u' on desktop.",
+      "status": "Verified ✅"
+    },
+    {
+      "time": "2026-11-15 14:33:45",
+      "type": "junior_mess_music",
+      "summary": "Junior bot created music/playlist mess (wrong track/false status/misclassification) regarding playlist '🥀 Sad.m3u'.",
+      "action": "Purged 'Aarambhame Le' from '🥀 Sad.m3u' on homeserver & rescanned Navidrome.",
+      "status": "Verified ✅"
+    }
+  ]
+}

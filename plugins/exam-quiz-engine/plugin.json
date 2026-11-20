@@ -1,0 +1,11 @@
+{
+  "name": "exam-quiz-engine",
+  "displayName": "Exam Quiz & Flashcard Engine",
+  "version": "1.0.0",
+  "description": "Generate active recall MCQs, numericals, and revision flashcards from study PDFs, and dispatch quizzes to Telegram and Obsidian.",
+  "suggestedPrompts": [
+    "Generate a 5-question MCQ quiz from Manufacturing & Material Science notes",
+    "Send a quick revision quiz question to Telegram",
+    "Create an active recall flashcard deck in Obsidian for Casting & Welding"
+  ]
+}

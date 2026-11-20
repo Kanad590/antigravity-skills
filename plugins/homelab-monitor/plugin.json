@@ -1,0 +1,11 @@
+{
+  "name": "homelab-monitor",
+  "displayName": "Homelab & Server Proactive Monitor",
+  "version": "1.0.0",
+  "description": "Proactive health monitoring, Docker status checks, and automated Telegram digest for the Raspberry Pi homeserver.",
+  "suggestedPrompts": [
+    "Check Raspberry Pi homeserver health and temperature",
+    "Send a homeserver health digest to my Telegram",
+    "Check if any Docker containers on the homeserver are stopped"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "name": "syncthing-manager",
+  "displayName": "Syncthing Synchronization Manager",
+  "version": "1.0.0",
+  "description": "Monitor folder sync status (Obsidian, Astrology, Documents), device links (Homeserver Pi ↔ PC), and detect/resolve sync conflicts.",
+  "suggestedPrompts": [
+    "Check Syncthing sync status between my PC and homeserver",
+    "Are there any sync conflict files in my Obsidian or Astrology vaults?",
+    "Trigger a Syncthing rescan on my Obsidian vault"
+  ]
+}

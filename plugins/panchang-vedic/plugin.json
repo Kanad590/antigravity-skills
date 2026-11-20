@@ -1,0 +1,11 @@
+{
+  "name": "panchang-vedic",
+  "displayName": "Vedic Panchanga & Muhurta Calculator",
+  "version": "1.0.0",
+  "description": "Calculate daily Vedic Panchang (Tithi, Vara, Nakshatra, Yoga, Karana), Rahu Kalam, Yamagandam, Abhijit Muhurta, and Gochar transits.",
+  "suggestedPrompts": [
+    "What is today's Vedic Panchanga and Tithi?",
+    "Show Rahu Kalam and Abhijit Muhurta for today",
+    "Calculate Panchanga for an upcoming auspicious date"
+  ]
+}

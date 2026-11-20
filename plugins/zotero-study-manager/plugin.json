@@ -1,0 +1,11 @@
+{
+  "name": "zotero-study-manager",
+  "displayName": "Zotero Study & Library Manager",
+  "version": "1.0.0",
+  "description": "Inspect and search local Zotero library, resolve study PDFs (RRB JE, RRB ALP, SSC, Banking, Books), extract notes, and link to Obsidian.",
+  "suggestedPrompts": [
+    "List all exam collections in my Zotero library",
+    "Find the PDF question papers for RRB JE CBT 1",
+    "Show details and file path for the latest added book in Zotero"
+  ]
+}

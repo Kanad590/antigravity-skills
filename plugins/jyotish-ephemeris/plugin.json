@@ -1,0 +1,11 @@
+{
+  "name": "jyotish-ephemeris",
+  "displayName": "Vedic Astrology Ephemeris Calculator",
+  "version": "1.0.0",
+  "description": "Calculate Nirayana planetary longitudes, Lahiri Ayanamsha, Rashi, Nakshatra Pada, Navamsha (D-9), and Ascendant using Swiss Ephemeris.",
+  "suggestedPrompts": [
+    "Calculate current planetary positions and Lagna for Kolkata",
+    "Compute Vedic planetary chart for a specific date and time",
+    "Show Navamsha (D9) positions and Nakshatra padas"
+  ]
+}

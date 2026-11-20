@@ -1,0 +1,11 @@
+{
+  "name": "calibre-manager",
+  "displayName": "Calibre Library Manager",
+  "version": "1.0.0",
+  "description": "Search, inspect metadata, add books, and automate e-book curation in Calibre Library.",
+  "suggestedPrompts": [
+    "List books in my Calibre library",
+    "Show metadata for Calibre book ID 1",
+    "Add a newly downloaded PDF to Calibre Library"
+  ]
+}
