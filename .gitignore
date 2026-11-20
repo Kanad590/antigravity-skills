@@ -1,0 +1,7 @@
+# Runtime logs & personal states
+*.log
+data/
+*.tmp
+__pycache__/
+*.py[cod]
+.stfolder/
