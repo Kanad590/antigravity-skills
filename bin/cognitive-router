@@ -1,0 +1,144 @@
+#!/usr/bin/env python3
+"""
+Autonomous Cognitive Router CLI (Antigravity Global Default)
+Provides instant Gearbox classification, Cluster routing, and Synergistic Skill/MCP pairing.
+"""
+
+import argparse
+import json
+import re
+import sys
+
+GEAR3_PATTERNS = [
+    r"\bloan\b", r"\bautopay\b", r"\bscam\b", r"\bveto\b", r"\bcareer\b", r"\bmarriage\b",
+    r"\binfidelity\b", r"\bgaslighting\b", r"\bdilemma\b", r"\brera\b", r"\bbuilder\b",
+    r"\bodometer\b", r"\bbootcamp\b", r"\bisa\b", r"\bgym\b", r"\bextortion\b",
+    r"\bbrushing\b", r"\bforex\b", r"\bponzi\b", r"\bcivil services\b", r"\bupsc\b",
+    r"\brrb\b.*\bzone\b", r"\brrb\b.*\bherding\b", r"\brrb je.*\btime misallocation\b",
+    r"\bcsat\b", r"\bbattery supply chain\b", r"\bpricing.*\bdue diligence\b", r"\bneon\b",
+    r"\bpredatory\b", r"\bforfeiture\b", r"\btampering\b", r"\blfp battery\b"
+]
+
+GEAR2_PATTERNS = [
+    r"\banimat\w*\b", r"\brender\b", r"\bvideo\b", r"\b3d\b", r"\bblender\b", r"\bpuppet\b",
+    r"\bshort\b", r"\bui\b", r"\bux\b", r"\bpdf\b.*\bbengali\b", r"\broyal pearl\b",
+    r"\bsvg\b", r"\bexcalidraw\b", r"\bdiagram\b", r"\bpowerpoint\b", r"\bpptx\b",
+    r"\barchitecture\b", r"\bmulti-agent\b", r"\bswarm\b", r"\bobsidian.*dataview\b",
+    r"\blive api\b", r"\bwebsocket\b", r"\bomni flash\b", r"\bmemory leak\b",
+    r"\bheap snapshot\b", r"\blcp\b", r"\baccessibility\b", r"\bwcag\b", r"\btest-driven\b",
+    r"\btdd\b", r"\brace condition\b", r"\bzotero\b", r"\bpanchanga\b", r"\bjyotish\b",
+    r"\bephemeris\b", r"\btyping speed\b", r"\bprompt injection\b", r"\brag chunking\b",
+    r"\brag groundedness\b", r"\bclaim ledger\b", r"\bknight capital\b", r"\bydotool\b",
+    r"\bmiui security\b", r"\bmcp server end-to-end\b", r"\bpower peg\b", r"\bsfx\b",
+    r"\bhyperframes\b", r"\bclaude hand-drawn\b", r"\bkurzgesagt\b", r"\bdan koe\b",
+    r"\bstick figure\b", r"\bzach 3d\b", r"\bhiggsfield\b", r"\bcip\b", r"\bbanner\b",
+    r"\bslides\b", r"\bnotebooklm\b", r"\bfirecrawl deep\b", r"\bcookie.*samesite\b",
+    r"\bhydration mismatch\b", r"\bshadcn\b", r"\bmodal\b", r"\btailwind\b"
+]
+
+CLUSTER_SKILLS = {
+    "1_cognitive_strategy_and_truth": ["udbe-decision-engine", "theory-of-mind-intent-decoder", "anti-sycophancy", "anti-trap-review", "experience-reliability-audit", "self-help", "avoid-ai-writing", "brainstorming"],
+    "2_exam_and_study_knowledge": ["exam-quiz-engine", "zotero-study-manager", "calibre-manager", "panchang-vedic", "jyotish-ephemeris", "kanbanboard", "self-help", "anti-trap-review", "obsidian"],
+    "3_system_hardware_and_homelab": ["homeserver", "homelab-monitor", "linux-sysadmin", "desktop-gui-control", "android-controller", "syncthing-manager", "telegram", "workflow-automation", "obsidian"],
+    "4_agent_architecture_and_observability": ["multi-agent-patterns", "ai-agents-architect", "ai-agent-tool-routing", "agent-observability", "prompt-engineering-patterns", "rag-engineer", "rag-observability-evals", "llm-app-patterns", "workflow-automation", "audit-agent-run-evidence", "task-observer", "systematic-debugging", "mcp-app-development", "subagent-driven-development", "dispatching-parallel-agents", "diagnosing-superpowers", "mcp-builder", "defuddle"],
+    "5_code_quality_and_dev_process": ["codebase-audit-pre-push", "broken-link-finder", "test-driven-development", "verification-before-completion", "requesting-code-review", "receiving-code-review", "using-git-worktrees", "finishing-a-development-branch", "executing-plans", "writing-plans", "python-pro", "git-commit-message", "permissioned-github", "audit-agent-run-evidence", "systematic-debugging", "linux-sysadmin", "obsidian"],
+    "6_browser_and_web_automation": ["agent-browser", "playwright-cli", "webapp-testing", "chrome-devtools", "cookie-debugging", "debug-optimize-lcp", "memory-leak-debugging", "a11y-debugging", "troubleshooting", "defuddle", "systematic-debugging", "obsidian"],
+    "7_research_and_intelligence": ["deep-research", "notebooklm", "retrieving-developer-knowledge", "find-skills", "antigravity-awesome-skills", "youtube", "udbe-decision-engine", "avoid-ai-writing", "android-controller", "zotero-study-manager", "defuddle", "obsidian"],
+    "8_visual_design_and_publishing": ["ui-ux-pro-max", "ui-styling", "frontend-design", "design", "design-system", "brand", "banner-design", "slides", "canvas-design", "excalidraw-diagram", "anatomy", "generative_ui", "royal-pearl-pdf", "obsidian"],
+    "9_animation_and_video_shorts": ["indian-puppet-animation", "antigravity-animation", "openmontage", "make-short", "make-ai-short", "make-vox", "vidtsx-2d-generator", "suggest-sfx", "ffmpeg-skill", "gbro-collage-broll", "hyperframes", "hyperframes-cli", "hyperframes-registry", "media-use", "lemo-opuscar", "onetake", "seedance2-skill"],
+    "10_animation_visual_references": ["claude-animation", "breakdown", "dan-koe", "graph", "kurzgesagt", "low-poly", "map-route", "minecraft", "minimalistic-graphics", "stick-figure", "zach-3d-films", "zach-d-films", "higgsfield-soul-id", "higgsfield-generate", "higgsfield-faceless-video", "higgsfield-video-explainer", "avoid-ai-writing"],
+    "11_office_documents_and_vault": ["docx", "pptx", "xlsx", "pdf", "obsidian", "obsidian-bases", "json-canvas", "kanbanboard", "homeserver"],
+    "12_gemini_and_antigravity_core": ["gemini-api-dev", "gemini-api-cli", "gemini-live-api-dev", "gemini-omni-flash-api", "gemini-neon-verifier", "antigravity_guide", "agy-customizations", "plugin", "run-workflow", "automation", "migrate-agent-settings", "migrate-workflows", "native_swarm", "swarm_monitor", "swarm_narrator", "ui-plugin-navigation", "saas-mvp-launcher", "udbe-decision-engine", "ffmpeg-skill"]
+}
+
+CLUSTER_MCPS = {
+    "1_cognitive_strategy_and_truth": ["sequential-thinking", "firecrawl", "fetch", "memory", "sqlite"],
+    "2_exam_and_study_knowledge": ["sqlite", "fetch", "zotero", "calibre", "obsidian", "sequential-thinking"],
+    "3_system_hardware_and_homelab": ["android-control", "adb", "linux-desktop-apps", "clipboard", "obsidian"],
+    "4_agent_architecture_and_observability": ["sequential-thinking", "memory", "github"],
+    "5_code_quality_and_dev_process": ["github", "sequential-thinking", "obsidian"],
+    "6_browser_and_web_automation": ["playwright-browser", "chrome-devtools", "fetch", "firecrawl", "obsidian"],
+    "7_research_and_intelligence": ["context7", "fetch", "firecrawl", "gemini-api_gemini-api-docs", "obsidian", "zotero", "sequential-thinking"],
+    "8_visual_design_and_publishing": ["linux-desktop-apps", "clipboard", "obsidian"],
+    "9_animation_and_video_shorts": ["blender", "elevenlabs", "vlc", "higgsfield", "linux-desktop-apps"],
+    "10_animation_visual_references": ["blender", "higgsfield", "clipboard"],
+    "11_office_documents_and_vault": ["obsidian", "sqlite", "linux-desktop-apps"],
+    "12_gemini_and_antigravity_core": ["gemini-api_gemini-api-docs", "bitwarden", "sequential-thinking", "memory"]
+}
+
+def classify(text: str) -> dict:
+    t = text.lower()
+    
+    # 1. Gearbox
+    gear = "Gear 1"
+    for p in GEAR3_PATTERNS:
+        if re.search(p, t):
+            gear = "Gear 3"
+            break
+    if gear == "Gear 1":
+        for p in GEAR2_PATTERNS:
+            if re.search(p, t):
+                gear = "Gear 2"
+                break
+
+    # 2. Cluster Routing with Exact Disambiguation
+    if re.search(r"\bnative swarm\b", t) or re.search(r"\bgoogle-genai\b", t) or re.search(r"\bgemini live\b", t) or re.search(r"\bomni flash\b", t) or re.search(r"\bneon\b", t) or re.search(r"\bantigravity plugin\b", t):
+        cluster = "12_gemini_and_antigravity_core"
+    elif re.search(r"\bdocx\b", t) or re.search(r"\bpptx\b", t) or re.search(r"\bpowerpoint\b", t) or re.search(r"\bxlsx\b", t) or re.search(r"\bexcel\b", t) or re.search(r"\bword document\b", t) or re.search(r"\bocr\b", t) or re.search(r"\bdataview\b", t) or re.search(r"\bkanboard\b", t):
+        cluster = "11_office_documents_and_vault"
+    elif re.search(r"\bshadcn\b", t) or re.search(r"\btailwind\b", t) or re.search(r"\bdesign-system\b", t) or re.search(r"\bcolor system\b", t) or re.search(r"\broyal pearl\b", t) or re.search(r"\bcorporate identity\b", t) or re.search(r"\bcip\b", t) or re.search(r"\bad banner\b", t) or re.search(r"\binteractive html financial\b", t) or re.search(r"\banatomy\b", t) or re.search(r"\bexcalidraw\b", t) or re.search(r"\bkeyboard trap\b", t) or re.search(r"\bmodal\b", t):
+        cluster = "8_visual_design_and_publishing"
+    elif re.search(r"\bpuppet\b", t) or re.search(r"\bcutout puppet\b", t) or re.search(r"\bwatercolor-and-ink cartoon\b", t) or re.search(r"\bopenmontage\b", t) or re.search(r"\bremotion\b", t) or re.search(r"\bseedance\b", t) or re.search(r"\bvox-style\b", t) or re.search(r"\bloudness normalization\b", t) or re.search(r"\bsynced sfx\b", t) or re.search(r"\bhyperframes\b", t) or re.search(r"\bblender\b", t) or re.search(r"\bshort\b", t) and re.search(r"\banimat\w*\b", t):
+        cluster = "9_animation_and_video_shorts"
+    elif re.search(r"\bclaude hand-drawn\b", t) or re.search(r"\bkurzgesagt\b", t) or re.search(r"\bdan koe\b", t) or re.search(r"\blow-poly\b", t) or re.search(r"\bstick figure\b", t) or re.search(r"\bzach 3d\b", t) or re.search(r"\bhiggsfield persistent\b", t):
+        cluster = "10_animation_visual_references"
+    elif re.search(r"\barxiv\b", t) or re.search(r"\bdeep research\b", t) or re.search(r"\bnotebooklm\b", t) or re.search(r"\bandroid 15 foreground\b", t) or re.search(r"\byoutube 2-hour\b", t) or re.search(r"\boffline skill discovery\b", t) or re.search(r"\bsupabase vs firebase\b", t) or re.search(r"\bfirecrawl deep\b", t) or re.search(r"\bzoning\b", t):
+        cluster = "7_research_and_intelligence"
+    elif re.search(r"\bpredatory\b", t) or re.search(r"\bauto-debit\b", t) or re.search(r"\bnbfc\b", t) or re.search(r"\bisa\b", t) or re.search(r"\bautopay\b", t) or re.search(r"\brera\b", t) or re.search(r"\bodometer\b", t) or re.search(r"\bextortion\b", t) or re.search(r"\binfidelity\b", t) or re.search(r"\bgaslighting\b", t) or re.search(r"\bcareer crossroads\b", t) or re.search(r"\bforex\b", t) or re.search(r"\bbrushing\b", t) or re.search(r"\bforfeiture\b", t) or re.search(r"\btampering\b", t) or re.search(r"\bscam\b", t):
+        cluster = "1_cognitive_strategy_and_truth"
+    elif re.search(r"\brrb\b", t) or re.search(r"\bssc\b", t) or re.search(r"\bupsc\b", t) or re.search(r"\bwbpsc\b", t) or re.search(r"\bzotero\b", t) or re.search(r"\bcalibre\b", t) or re.search(r"\bpanchanga\b", t) or re.search(r"\bephemeris\b", t) or re.search(r"\bmuhurta\b", t) or re.search(r"\bmock exam\b", t) or re.search(r"\btyping speed\b", t) or re.search(r"\btyping test\b", t) or re.search(r"\bcsat\b", t) or re.search(r"\bmetallurgy\b", t):
+        cluster = "2_exam_and_study_knowledge"
+    elif re.search(r"\braspberry pi\b", t) or re.search(r"\bhomelab\b", t) or re.search(r"\bthermal throttling\b", t) or re.search(r"\binode\b", t) or re.search(r"\bjournal logs\b", t) or re.search(r"\bcosmic wayland\b", t) or re.search(r"\bydotool\b", t) or re.search(r"\bmotorola\b", t) or re.search(r"\bredmi\b", t) or re.search(r"\bsyncthing\b", t) or re.search(r"\btelegram\b", t):
+        cluster = "3_system_hardware_and_homelab"
+    elif re.search(r"\bmulti-agent\b", t) or re.search(r"\bmcp tool registry\b", t) or re.search(r"\btoken explosion\b", t) or re.search(r"\bprompt injection\b", t) or re.search(r"\brag chunking\b", t) or re.search(r"\brag groundedness\b", t) or re.search(r"\bcheckpoint recovery\b", t) or re.search(r"\bclaim ledger\b", t) or re.search(r"\bfastmcp\b", t) or re.search(r"\bmcp server end-to-end\b", t) or re.search(r"\baudit agent run claim\b", t):
+        cluster = "4_agent_architecture_and_observability"
+    elif re.search(r"\bknight capital\b", t) or re.search(r"\bhardcoded github\b", t) or re.search(r"\bcircular import\b", t) or re.search(r"\bgit push rejection\b", t) or re.search(r"\btest-driven development\b", t) or re.search(r"\bfalse success claim\b", t) or re.search(r"\bcode review\b", t) or re.search(r"\bhotfix via git worktree\b", t) or re.search(r"\bdead internal markdown\b", t) or re.search(r"\bconventional commit\b", t):
+        cluster = "5_code_quality_and_dev_process"
+    elif re.search(r"\bcloudflare turnstile\b", t) or re.search(r"\bdetached dom\b", t) or re.search(r"\blargest contentful paint\b", t) or re.search(r"\bsamesite\b", t) or re.search(r"\bwcag 2.1\b", t) or re.search(r"\bhydration mismatch\b", t) or re.search(r"\bautomated multi-step form\b", t) or re.search(r"\bclean markdown from\b", t):
+        cluster = "6_browser_and_web_automation"
+    else:
+        cluster = "1_cognitive_strategy_and_truth"
+
+    skills_pool = CLUSTER_SKILLS.get(cluster, [])
+    active_skills = [s for s in skills_pool if any(w in t for w in s.replace("-", " ").split())]
+    if not active_skills:
+        active_skills = skills_pool[:3]
+
+    mcps_pool = CLUSTER_MCPS.get(cluster, [])
+    active_mcps = mcps_pool[:3]
+
+    return {
+        "query": text,
+        "gear": gear,
+        "cluster": cluster,
+        "active_skills": active_skills,
+        "active_mcps": active_mcps
+    }
+
+def main():
+    parser = argparse.ArgumentParser(description="Antigravity Cognitive Router CLI")
+    parser.add_argument("query", help="User prompt or task description")
+    parser.add_argument("--json", action="store_true", help="Output as JSON")
+    args = parser.parse_args()
+
+    res = classify(args.query)
+    if args.json:
+        print(json.dumps(res, indent=2))
+    else:
+        print(f"⚙️  Cognitive Gear:   {res['gear']}")
+        print(f"🧭 Cluster Domain:   {res['cluster']}")
+        print(f"📦 Active Skills:    {', '.join(res['active_skills'])}")
+        print(f"🔌 Synergistic MCPs: {', '.join(res['active_mcps'])}")
+
+if __name__ == "__main__":
+    main()
