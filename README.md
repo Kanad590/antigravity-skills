@@ -7,7 +7,7 @@
 
 A production-grade collection of **custom AI agent skills, mental models, cognitive rules, and specialized plugins** designed and battle-tested by Kanad Samanta ([@Kanad590](https://github.com/Kanad590)) and Antigravity.
 
-Built for autonomous execution, anti-sycophantic decision audits, forensic commercial reviews, deep cross-project verification, and robust Linux desktop automation.
+Built for autonomous multi-agent swarms, anti-sycophantic decision audits, forensic commercial reviews, deep cross-project verification, and robust Linux desktop automation.
 
 ---
 
@@ -41,7 +41,7 @@ flowchart TD
     end
     
     Router --> Clusters
-    Clusters --> Execution["Audited Multi-Skill & MCP Pipeline"]
+    Clusters --> Execution["Audited Multi-Skill, MCP & Swarm Pipeline"]
 ```
 
 ---
@@ -77,26 +77,34 @@ Route any prompt to its optimal cognitive gear, functional cluster, and toolchai
 
 ---
 
-## 📜 Third-Party Attributions & Open-Source Licenses
+## 🧠 Mental Models and Cognitive Frameworks (`mental-models/`)
 
-> [!IMPORTANT]
-> **Zero Unearned Credit Commitment:**  
-> The maintainer of this repository, **Kanad Samanta (@Kanad590)**, claims **no unearned credit or ownership** for third-party skills, upstream repositories, or open-source community libraries integrated into or referenced by this project. Full credit belongs strictly to their respective authors and maintainers.
+The repository codifies 11 core mental models that guide AI reasoning, strategic allocation, and multi-agent coordination:
 
-Please review [`ATTRIBUTION.md`](ATTRIBUTION.md) for complete details on upstream contributors, including:
-* **Mskadu** (`mskadu/opencode-agent-skills`) - `anti-sycophancy`
-* **Abhishek Adhikari** (`WHOISABHISHEKADHIKARI/agentic-awesome-skills`, `100seotools`) - `broken-link-finder`, `audit-agent-run-evidence`, `codebase-audit-pre-push`
-* **Sanjay Adhikari** (`sanjay3290/ai-skills`) - `deep-research`, `notebooklm`
-* **Conor Bronsdon** (`conorbronsdon/avoid-ai-writing`) - `avoid-ai-writing`
-* **sickn33** (`sickn33/antigravity-awesome-skills`) - community awesome skills index
-* **Google DeepMind & Anthropic** - core agent platforms, MCP standards, and foundation models
+1. **[`01_3_gear_cognitive_engine.md`](mental-models/01_3_gear_cognitive_engine.md)**: Dynamic compute allocation across Sprint (Gear 1), Craft (Gear 2), and Deep Mind (Gear 3) modes.
+2. **[`02_ashlesha_rahu_theory_of_mind.md`](mental-models/02_ashlesha_rahu_theory_of_mind.md)**: Cognitive Theory of Mind, cultural intent decoding, and hidden motive analysis.
+3. **[`03_anti_trap_forensic_audit.md`](mental-models/03_anti_trap_forensic_audit.md)**: 13-Factor forensic audit detecting commercial lock-in, recurring traps, and false claims.
+4. **[`04_udbe_bayesian_decision_engine.md`](mental-models/04_udbe_bayesian_decision_engine.md)**: Universal Dynamic Bayesian Scale & Evidence-Weighted evaluation engine.
+5. **[`05_el_farol_crowded_trade_strategy.md`](mental-models/05_el_farol_crowded_trade_strategy.md)**: Anti-crowd contrarian reasoning and game-theoretic differentiation.
+6. **[`06_human_cadence_and_clarity.md`](mental-models/06_human_cadence_and_clarity.md)**: Authentic human prose cadence eliminating 43 robotic AI patterns.
+7. **[`07_divergent_creative_engineering.md`](mental-models/07_divergent_creative_engineering.md)**: Lateral thinking protocols based on Edward de Bono's frameworks (PO, SCAMPER).
+8. **[`08_royal_pearl_pdf_design_system.md`](mental-models/08_royal_pearl_pdf_design_system.md)**: High-typography publishing system optimized for dark-mode readability.
+9. **[`09_discrete_amd_gpu_priority.md`](mental-models/09_discrete_amd_gpu_priority.md)**: Workstation acceleration rules prioritizing dedicated GPU pipelines (`DRI_PRIME`).
+10. **[`10_12_cluster_routing_atlas.md`](mental-models/10_12_cluster_routing_atlas.md)**: Comprehensive mapping of 137+ tools across 12 mutually exclusive cognitive clusters.
+11. **[`11_kanad_monastic_consensus_swarm.md`](mental-models/11_kanad_monastic_consensus_swarm.md)**: Universal Tri-Party Democratic Governance (Manager, Worker, Analyser, Monitor), Hardware-Anchored Reality (Intel HD 520 / 60fps), and Monastic Zero-Data-Loss Processing Model for AI Swarms.
 
 ---
 
 ## ⚡ Skills Catalog (`skills/`)
 
+### Multi-Agent Swarms & Democratic Governance
+* **[`kanad-consensus-swarm`](skills/kanad-consensus-swarm/SKILL.md)**: The definitive, universal multi-agent swarm governance standard. Enforces institutional separation of powers (**🧭 Manager**, **🛠️ Worker**, **🔬 Analyser**, **🛡️ Monitor**), democratic consensus voting (2/3 majority or 3/3 unanimous ratification), hardware fill-rate protection (Intel HD 520, zero `backdrop-filter: blur()`, locked 60fps), and the monastic "Zero Question Missed" zero-data-loss processing model.
+  * 🗳️ [Voting Consensus Protocol](skills/kanad-consensus-swarm/references/voting_consensus_protocol.md)
+  * 💻 [Hardware-Anchored Reality Protocol](skills/kanad-consensus-swarm/references/hardware_anchored_audit.md)
+  * 👥 [Separation of Powers & RACI Matrix](skills/kanad-consensus-swarm/references/separation_of_powers_matrix.md)
+  * 🏆 [Dual-Vault Evolution Case Study](skills/kanad-consensus-swarm/references/case_study_dual_vault_evolution.md)
+
 ### Core Decision & Verification Skills
-* **`kanad-consensus-swarm`**: Universal Tri-Party Democratic Governance (Manager, Worker, Analyser), Hardware-Anchored Reality (Intel HD 520 / 60fps), and Monastic Zero-Data-Loss Processing Model for AI Swarms.
 * **`anti-trap-review`**: 13-Factor forensic review & dual-set scoring engine for digital products, courses, and SaaS.
 * **`experience-reliability-audit`**: 8-Signal offline vendor and local shop trust evaluation framework.
 * **`gemini-neon-verifier`**: Google Gemini Web 4 Neon cross-project verification and anti-blind-dumping engine.
@@ -136,6 +144,22 @@ Please review [`ATTRIBUTION.md`](ATTRIBUTION.md) for complete details on upstrea
 * **`syncthing-manager`**: Continuous device sync verification and conflict resolution daemon.
 * **`calibre-manager`**: Calibre e-book library curation, metadata extraction, and indexing.
 * **`zotero-study-manager`**: Local Zotero bibliographic search, study question paper retrieval, and PDF reading.
+
+---
+
+## 📜 Third-Party Attributions & Open-Source Licenses
+
+> [!IMPORTANT]
+> **Zero Unearned Credit Commitment:**  
+> The maintainer of this repository, **Kanad Samanta (@Kanad590)**, claims **no unearned credit or ownership** for third-party skills, upstream repositories, or open-source community libraries integrated into or referenced by this project. Full credit belongs strictly to their respective authors and maintainers.
+
+Please review [`ATTRIBUTION.md`](ATTRIBUTION.md) for complete details on upstream contributors, including:
+* **Mskadu** (`mskadu/opencode-agent-skills`) - `anti-sycophancy`
+* **Abhishek Adhikari** (`WHOISABHISHEKADHIKARI/agentic-awesome-skills`, `100seotools`) - `broken-link-finder`, `audit-agent-run-evidence`, `codebase-audit-pre-push`
+* **Sanjay Adhikari** (`sanjay3290/ai-skills`) - `deep-research`, `notebooklm`
+* **Conor Bronsdon** (`conorbronsdon/avoid-ai-writing`) - `avoid-ai-writing`
+* **sickn33** (`sickn33/antigravity-awesome-skills`) - community awesome skills index
+* **Google DeepMind & Anthropic** - core agent platforms, MCP standards, and foundation models
 
 ---
 
