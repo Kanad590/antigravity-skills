@@ -96,6 +96,7 @@ Please review [`ATTRIBUTION.md`](ATTRIBUTION.md) for complete details on upstrea
 ## ⚡ Skills Catalog (`skills/`)
 
 ### Core Decision & Verification Skills
+* **`kanad-consensus-swarm`**: Universal Tri-Party Democratic Governance (Manager, Worker, Analyser), Hardware-Anchored Reality (Intel HD 520 / 60fps), and Monastic Zero-Data-Loss Processing Model for AI Swarms.
 * **`anti-trap-review`**: 13-Factor forensic review & dual-set scoring engine for digital products, courses, and SaaS.
 * **`experience-reliability-audit`**: 8-Signal offline vendor and local shop trust evaluation framework.
 * **`gemini-neon-verifier`**: Google Gemini Web 4 Neon cross-project verification and anti-blind-dumping engine.
