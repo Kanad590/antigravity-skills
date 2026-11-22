@@ -4242,7 +4242,7 @@ def main():
     subparsers.add_parser("apt2", help="Alias for sunil")
 
     # /julie5 (Julie Hogbin 5 Books to Communicate Better Than 99% of People)
-    subparsers.add_parser("julie5", help="Julie Hogbin: 5 Books to Communicate Better Than 99% of People (@juliehogbin)")
+    subparsers.add_parser("julie5", help="Julie Hogbin: 5 Books to Communicate Better Than 99%% of People (@juliehogbin)")
     subparsers.add_parser("communication5", help="Alias for julie5")
     subparsers.add_parser("communicate", help="Alias for julie5")
     subparsers.add_parser("tacticaltalk", help="Alias for julie5")

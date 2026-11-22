@@ -200,17 +200,24 @@ flowchart TD
 
 ---
 
-## 🛠️ স্বয়ংক্রিয় পাইথন টুল ব্যবহার (Automated Script Execution)
+## 🛠️ স্বয়ংক্রিয় পাইথন টুল ও ডিফেনসিভ স্কিমা (Automated Script & Schema Validation)
 
-এই স্কিলের সাথে একটি স্বয়ংক্রিয় পাইথন ক্যালকুলেটর যুক্ত রয়েছে যা শূন্য ভুলে দ্রুত হিসাব কষে দেয়:
+এই স্কিলের সাথে একটি স্বয়ংক্রিয় ডিফেনসিভ পাইথন ক্যালকুলেটর যুক্ত রয়েছে যা কঠোর JSON Schema (`draft-07`) ভ্যালিডেশনের মাধ্যমে টাইপো ও ইনপুট অসংগতি দূর করে:
 
 ```bash
-# JSON ডাটা ফাইল দিয়ে রান করা
+# JSON ডাটা ফাইল দিয়ে রান করা (কঠোর স্কিমা ভ্যালিডেশন সহ)
 python3 ~/.gemini/config/skills/udbe-decision-engine/scripts/evaluate.py --json decision_input.json
 
-# সরাসরি ডিফল্ট বেন্চমার্ক রান করা (কো-ফাউন্ডার ডিলেমা টেস্ট)
+# সরাসরি ডিফল্ট বেঞ্চমার্ক রান করা (কো-ফাউন্ডার ডিলেমা টেস্ট)
 python3 ~/.gemini/config/skills/udbe-decision-engine/scripts/evaluate.py
 ```
+
+### 📋 ইনপুট পেলোড স্কিমা (`schema/decision.schema.json` - v3.7)
+* **ভাষা-নিরপেক্ষ ভেটো নীতি (Language-Agnostic Veto):** পিলারের নাম বাংলা (`"আইনি চুক্তি ও ইকুইটি"`) বা ইংরেজি যাই হোক না কেন, ভেটো ট্রিপ করার জন্য প্রতিটি পিলারে অবশ্যই **`pillar_type`** নির্ধারণ করতে হবে।
+  * `pillar_type`: `"fiduciary"` | `"legal"` | `"financial"` | `"technical"` | `"emotional"` | `"operational"` | `"reputational"` | `"strategic"` | `"other"`
+* **কঠোর ওজন সীমা (Weight Bounds):** প্রতিটি পিলারের `weight > 0` হওয়া বাধ্যতামূলক। কোনো নেগেটিভ ওজন বা অনিবন্ধিত ফিল্ড (`additionalProperties: false`) গ্রহণযোগ্য নয়।
+* **সততা-দক্ষতা পৃথকীকরণ (Competence-Integrity Decoupling):** `pillar_type` যদি `fiduciary` বা `legal` হয় এবং `contract_signed: false` থাকে, তবে কারিগরি স্কোর যত বেশিই হোক না কেন, ইঞ্জিন তৎক্ষণাৎ **🔴 FATAL VETO ABORT** কার্যকর করবে।
+
 
 ---
 

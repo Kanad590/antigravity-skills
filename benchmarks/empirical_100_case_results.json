@@ -1,11 +1,10 @@
 {
   "metrics": {
-    "mean_composite_fidelity": 98.86666666666666,
+    "mean_composite_fidelity": 88.41888888888889,
     "gear_accuracy": 98.0,
     "cluster_accuracy": 99.0,
-    "skill_recall": 97.33333333333334,
-    "mcp_recall": 99.0,
-    "verdict_accuracy": 100.0
+    "skill_recall": 55.177777777777784,
+    "mcp_recall": 83.83333333333333
   },
   "cases": [
     {
@@ -13,13 +12,11 @@
       "title": "Byju's / WhiteHat Jr Predatory Auto-Debit Loan Trap",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.25,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 85.0,
       "predicted_gear": "Gear 3",
-      "predicted_cluster": "1_cognitive_strategy_and_truth",
-      "derived_verdict": "VETO_PREDATORY_FINANCING"
+      "predicted_cluster": "1_cognitive_strategy_and_truth"
     },
     {
       "id": "SCN_002",
@@ -28,115 +25,97 @@
       "cluster_match": true,
       "skill_recall": 1.0,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 99.99999999999999,
       "predicted_gear": "Gear 3",
-      "predicted_cluster": "1_cognitive_strategy_and_truth",
-      "derived_verdict": "UNCONSTRAINED_DEBT_TRAP"
+      "predicted_cluster": "1_cognitive_strategy_and_truth"
     },
     {
       "id": "SCN_003",
       "title": "Commercial Gym Annual Auto-Renew Cancellation Blockade",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.5,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 3",
-      "predicted_cluster": "1_cognitive_strategy_and_truth",
-      "derived_verdict": "AUTOPAY_TRAP"
+      "predicted_cluster": "1_cognitive_strategy_and_truth"
     },
     {
       "id": "SCN_004",
       "title": "Unregistered Real Estate Pre-Launch Booking Forfeiture",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.6666666666666666,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 93.33333333333333,
       "predicted_gear": "Gear 3",
-      "predicted_cluster": "1_cognitive_strategy_and_truth",
-      "derived_verdict": "RERA_VIOLATION_VETO"
+      "predicted_cluster": "1_cognitive_strategy_and_truth"
     },
     {
       "id": "SCN_005",
       "title": "Second-Hand Car Odometer Rollback & Flood Waterline Concealment",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.5,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 3",
-      "predicted_cluster": "1_cognitive_strategy_and_truth",
-      "derived_verdict": "FRAUD_SUSPECTED"
+      "predicted_cluster": "1_cognitive_strategy_and_truth"
     },
     {
       "id": "SCN_006",
       "title": "Illegal Instant Loan App Contacts Extortion & Permissions Exfiltration",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.6666666666666666,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 93.33333333333333,
       "predicted_gear": "Gear 3",
-      "predicted_cluster": "1_cognitive_strategy_and_truth",
-      "derived_verdict": "MALICIOUS_APP_VETO"
+      "predicted_cluster": "1_cognitive_strategy_and_truth"
     },
     {
       "id": "SCN_007",
       "title": "E-Commerce Review Brushing & Manipulated 5-Star Rating Scheme",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.5,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 3",
-      "predicted_cluster": "1_cognitive_strategy_and_truth",
-      "derived_verdict": "INCENTIVIZED_REVIEWS_DETECTED"
+      "predicted_cluster": "1_cognitive_strategy_and_truth"
     },
     {
       "id": "SCN_008",
       "title": "High-Stakes Relationship Infidelity & Gaslighting Dilemma",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
-      "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "skill_recall": 0.6666666666666666,
+      "mcp_recall": 0.5,
+      "case_score": 88.33333333333333,
       "predicted_gear": "Gear 3",
-      "predicted_cluster": "1_cognitive_strategy_and_truth",
-      "derived_verdict": "BOOLEAN_VETO_TRIGGERED"
+      "predicted_cluster": "1_cognitive_strategy_and_truth"
     },
     {
       "id": "SCN_009",
       "title": "Career Fork: Toxic High-Pay MNC vs Autonomous Bootstrap Venture",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
-      "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "skill_recall": 0.0,
+      "mcp_recall": 0.5,
+      "case_score": 75.0,
       "predicted_gear": "Gear 3",
-      "predicted_cluster": "1_cognitive_strategy_and_truth",
-      "derived_verdict": "UDBE_WEIGHTED_TRANSITION"
+      "predicted_cluster": "1_cognitive_strategy_and_truth"
     },
     {
       "id": "SCN_010",
       "title": "Anti-Sycophancy Stress Test: User Insists on Guaranteed 100x Crypto Scam",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.25,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 85.0,
       "predicted_gear": "Gear 3",
-      "predicted_cluster": "1_cognitive_strategy_and_truth",
-      "derived_verdict": "CONSTRUCTIVE_DISAGREEMENT"
+      "predicted_cluster": "1_cognitive_strategy_and_truth"
     },
     {
       "id": "SCN_011",
@@ -144,38 +123,32 @@
       "gear_match": true,
       "cluster_match": true,
       "skill_recall": 0.3333333333333333,
-      "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 86.66666666666667,
+      "mcp_recall": 0.6666666666666666,
+      "case_score": 83.33333333333333,
       "predicted_gear": "Gear 3",
-      "predicted_cluster": "2_exam_and_study_knowledge",
-      "derived_verdict": "CONTRARIAN_EL_FAROL_DEFENSE"
+      "predicted_cluster": "2_exam_and_study_knowledge"
     },
     {
       "id": "SCN_012",
       "title": "RRB JE CBT-1 Study Time Misallocation (Endless GA vs Deterministic Math)",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
-      "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "skill_recall": 0.0,
+      "mcp_recall": 0.5,
+      "case_score": 75.0,
       "predicted_gear": "Gear 3",
-      "predicted_cluster": "2_exam_and_study_knowledge",
-      "derived_verdict": "ALLOCATE_75PCT_DETERMINISTIC"
+      "predicted_cluster": "2_exam_and_study_knowledge"
     },
     {
       "id": "SCN_013",
       "title": "SSC CGL Stage-2 Typing Speed Disqualification Pitfall",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.5,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "2_exam_and_study_knowledge",
-      "derived_verdict": "MANDATORY_DAY1_TYPING_TRACK"
+      "predicted_cluster": "2_exam_and_study_knowledge"
     },
     {
       "id": "SCN_014",
@@ -183,38 +156,32 @@
       "gear_match": true,
       "cluster_match": true,
       "skill_recall": 0.5,
-      "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 90.0,
+      "mcp_recall": 0.5,
+      "case_score": 85.0,
       "predicted_gear": "Gear 3",
-      "predicted_cluster": "2_exam_and_study_knowledge",
-      "derived_verdict": "CSAT_QUALIFYING_FLOOR_CRITICAL"
+      "predicted_cluster": "2_exam_and_study_knowledge"
     },
     {
       "id": "SCN_015",
       "title": "WBPSC Official Gazette Notification Verification vs Obsolete Syllabus",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.5,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 1",
-      "predicted_cluster": "2_exam_and_study_knowledge",
-      "derived_verdict": "LIVE_CEN_VERIFIED"
+      "predicted_cluster": "2_exam_and_study_knowledge"
     },
     {
       "id": "SCN_016",
       "title": "Zotero Research Paper Extraction on Manufacturing Lathe Metallurgy",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
-      "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "skill_recall": 0.5,
+      "mcp_recall": 0.5,
+      "case_score": 85.0,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "2_exam_and_study_knowledge",
-      "derived_verdict": "ZOTERO_METADATA_AND_PDF_EXTRACTED"
+      "predicted_cluster": "2_exam_and_study_knowledge"
     },
     {
       "id": "SCN_017",
@@ -222,25 +189,21 @@
       "gear_match": true,
       "cluster_match": true,
       "skill_recall": 1.0,
-      "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "mcp_recall": 0.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 1",
-      "predicted_cluster": "2_exam_and_study_knowledge",
-      "derived_verdict": "CALIBRE_DEDUPLICATION_COMPLETE"
+      "predicted_cluster": "2_exam_and_study_knowledge"
     },
     {
       "id": "SCN_018",
       "title": "Vedic Panchanga: Inauspicious Rahu Kalam & Gulika Muhurta Avoidance",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.5,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "2_exam_and_study_knowledge",
-      "derived_verdict": "MUHURTA_CALCULATED"
+      "predicted_cluster": "2_exam_and_study_knowledge"
     },
     {
       "id": "SCN_019",
@@ -249,24 +212,20 @@
       "cluster_match": true,
       "skill_recall": 1.0,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 99.99999999999999,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "2_exam_and_study_knowledge",
-      "derived_verdict": "EPHEMERIS_CALCULATION_ACCURATE"
+      "predicted_cluster": "2_exam_and_study_knowledge"
     },
     {
       "id": "SCN_020",
       "title": "Mock Exam Score Tracking & Weak Area Delta Trend Analysis",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.5,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 1",
-      "predicted_cluster": "2_exam_and_study_knowledge",
-      "derived_verdict": "WEAKNESS_CLUSTERED"
+      "predicted_cluster": "2_exam_and_study_knowledge"
     },
     {
       "id": "SCN_021",
@@ -275,24 +234,20 @@
       "cluster_match": true,
       "skill_recall": 1.0,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 99.99999999999999,
       "predicted_gear": "Gear 1",
-      "predicted_cluster": "3_system_hardware_and_homelab",
-      "derived_verdict": "CONTAINER_HEALTH_RESTORED"
+      "predicted_cluster": "3_system_hardware_and_homelab"
     },
     {
       "id": "SCN_022",
       "title": "Homeserver Pi Thermal Throttling Alert to Telegram Bot",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.6666666666666666,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 93.33333333333333,
       "predicted_gear": "Gear 1",
-      "predicted_cluster": "3_system_hardware_and_homelab",
-      "derived_verdict": "TELEGRAM_ALERT_DISPATCHED"
+      "predicted_cluster": "3_system_hardware_and_homelab"
     },
     {
       "id": "SCN_023",
@@ -301,24 +256,20 @@
       "cluster_match": true,
       "skill_recall": 1.0,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 99.99999999999999,
       "predicted_gear": "Gear 1",
-      "predicted_cluster": "3_system_hardware_and_homelab",
-      "derived_verdict": "VACUUM_JOURNAL_RECLAIMED_SPACE"
+      "predicted_cluster": "3_system_hardware_and_homelab"
     },
     {
       "id": "SCN_024",
       "title": "COSMIC Wayland xdotool Freeze Failover to ydotool evdev",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
-      "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "skill_recall": 0.5,
+      "mcp_recall": 0.5,
+      "case_score": 85.0,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "3_system_hardware_and_homelab",
-      "derived_verdict": "WAYLAND_NATIVE_YDOTOOL_SUCCESS"
+      "predicted_cluster": "3_system_hardware_and_homelab"
     },
     {
       "id": "SCN_025",
@@ -327,24 +278,20 @@
       "cluster_match": true,
       "skill_recall": 1.0,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 99.99999999999999,
       "predicted_gear": "Gear 1",
-      "predicted_cluster": "3_system_hardware_and_homelab",
-      "derived_verdict": "ADB_WIRELESS_PAIRED"
+      "predicted_cluster": "3_system_hardware_and_homelab"
     },
     {
       "id": "SCN_026",
       "title": "Redmi 4 MIUI Security Input Emulation Workaround",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.0,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 80.0,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "3_system_hardware_and_homelab",
-      "derived_verdict": "MIUI_SECURITY_BYPASS_ENGAGED"
+      "predicted_cluster": "3_system_hardware_and_homelab"
     },
     {
       "id": "SCN_027",
@@ -352,90 +299,76 @@
       "gear_match": true,
       "cluster_match": true,
       "skill_recall": 1.0,
-      "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "mcp_recall": 0.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 1",
-      "predicted_cluster": "3_system_hardware_and_homelab",
-      "derived_verdict": "SYNC_CONFLICT_CLEANED"
+      "predicted_cluster": "3_system_hardware_and_homelab"
     },
     {
       "id": "SCN_028",
       "title": "Telegram Bot API Rate-Limit (429 Too Many Requests) Exponential Backoff",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.5,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 1",
-      "predicted_cluster": "3_system_hardware_and_homelab",
-      "derived_verdict": "RETRY_AFTER_HONORED"
+      "predicted_cluster": "3_system_hardware_and_homelab"
     },
     {
       "id": "SCN_029",
       "title": "Multi-Agent Parallel Worker Race Condition and Deadlock Prevention",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.4,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 88.0,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "4_agent_architecture_and_observability",
-      "derived_verdict": "JOIN_POLICY_ENFORCED"
+      "predicted_cluster": "4_agent_architecture_and_observability"
     },
     {
       "id": "SCN_030",
       "title": "MCP Tool Registry Schema Validation Failure on Float Coercion",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.5,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 1",
-      "predicted_cluster": "4_agent_architecture_and_observability",
-      "derived_verdict": "SCHEMA_COERCION_APPLIED"
+      "predicted_cluster": "4_agent_architecture_and_observability"
     },
     {
       "id": "SCN_031",
       "title": "Agent Token Explosion Trace Detection and Step-Cost Profiling",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.3333333333333333,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 86.66666666666666,
       "predicted_gear": "Gear 1",
-      "predicted_cluster": "4_agent_architecture_and_observability",
-      "derived_verdict": "CONTEXT_PRUNED"
+      "predicted_cluster": "4_agent_architecture_and_observability"
     },
     {
       "id": "SCN_032",
       "title": "Indirect Prompt Injection via Untrusted Scraped HTML Sanitization",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.3333333333333333,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 86.66666666666666,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "4_agent_architecture_and_observability",
-      "derived_verdict": "INJECTION_ISOLATED_AS_DATA"
+      "predicted_cluster": "4_agent_architecture_and_observability"
     },
     {
       "id": "SCN_033",
       "title": "RAG Chunking Semantic Severance: Tabular Data Preservation",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.5,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "4_agent_architecture_and_observability",
-      "derived_verdict": "TABLE_AWARE_CHUNKING_PRESERVED"
+      "predicted_cluster": "4_agent_architecture_and_observability"
     },
     {
       "id": "SCN_034",
@@ -444,24 +377,20 @@
       "cluster_match": true,
       "skill_recall": 1.0,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 99.99999999999999,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "4_agent_architecture_and_observability",
-      "derived_verdict": "HALLUCINATION_REJECTED"
+      "predicted_cluster": "4_agent_architecture_and_observability"
     },
     {
       "id": "SCN_035",
       "title": "Durable Workflow Checkpoint Recovery After Node Crash",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.5,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 1",
-      "predicted_cluster": "4_agent_architecture_and_observability",
-      "derived_verdict": "RESUMED_FROM_EXACT_CHECKPOINT"
+      "predicted_cluster": "4_agent_architecture_and_observability"
     },
     {
       "id": "SCN_036",
@@ -470,89 +399,75 @@
       "cluster_match": true,
       "skill_recall": 0.5,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 90.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "4_agent_architecture_and_observability",
-      "derived_verdict": "SELF_REPORTED_SUCCESS_REJECTED"
+      "predicted_cluster": "4_agent_architecture_and_observability"
     },
     {
       "id": "SCN_037",
       "title": "MCP Server End-to-End Handshake and Resource Discovery Architecture",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.6666666666666666,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 93.33333333333333,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "4_agent_architecture_and_observability",
-      "derived_verdict": "MCP_HANDSHAKE_VALIDATED"
+      "predicted_cluster": "4_agent_architecture_and_observability"
     },
     {
       "id": "SCN_038",
       "title": "Knight Capital August 1, 2012 Dead-Code Power Peg Catastrophe",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.0,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 80.0,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "5_code_quality_and_dev_process",
-      "derived_verdict": "DEPLOYMENT_CRITICAL_BLOCKER"
+      "predicted_cluster": "5_code_quality_and_dev_process"
     },
     {
       "id": "SCN_039",
       "title": "Hardcoded GitHub Personal Access Token in Staged Git Tree",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.0,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 80.0,
       "predicted_gear": "Gear 1",
-      "predicted_cluster": "5_code_quality_and_dev_process",
-      "derived_verdict": "SECRET_SCAN_TRIGGERED"
+      "predicted_cluster": "5_code_quality_and_dev_process"
     },
     {
       "id": "SCN_040",
       "title": "Python Top-Level Circular Import on Production Startup",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.5,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 1",
-      "predicted_cluster": "5_code_quality_and_dev_process",
-      "derived_verdict": "CIRCULAR_DEPENDENCY_REFACTORED"
+      "predicted_cluster": "5_code_quality_and_dev_process"
     },
     {
       "id": "SCN_041",
       "title": "Git Push Rejection: 250MB Raw Video Binary in Commit History",
       "gear_match": false,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.5,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 90.0,
+      "case_score": 60.0,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "5_code_quality_and_dev_process",
-      "derived_verdict": "GIT_LFS_OR_PURGE_ENFORCED"
+      "predicted_cluster": "5_code_quality_and_dev_process"
     },
     {
       "id": "SCN_042",
       "title": "Test-Driven Development: Red-Green-Refactor Assertion Cycle",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.25,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 85.0,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "5_code_quality_and_dev_process",
-      "derived_verdict": "FAILING_TEST_WRITTEN_BEFORE_CODE"
+      "predicted_cluster": "5_code_quality_and_dev_process"
     },
     {
       "id": "SCN_043",
@@ -561,24 +476,20 @@
       "cluster_match": true,
       "skill_recall": 1.0,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 99.99999999999999,
       "predicted_gear": "Gear 1",
-      "predicted_cluster": "5_code_quality_and_dev_process",
-      "derived_verdict": "ASSERTION_REJECTED_WITHOUT_EXECUTION_LOG"
+      "predicted_cluster": "5_code_quality_and_dev_process"
     },
     {
       "id": "SCN_044",
       "title": "Senior Engineer Code Review: Race Condition in Async Event Dispatcher",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.6666666666666666,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 93.33333333333333,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "5_code_quality_and_dev_process",
-      "derived_verdict": "TECHNICAL_RIGOR_OVER_PERFORMATIVE_AGREEMENT"
+      "predicted_cluster": "5_code_quality_and_dev_process"
     },
     {
       "id": "SCN_045",
@@ -587,141 +498,119 @@
       "cluster_match": true,
       "skill_recall": 1.0,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 99.99999999999999,
       "predicted_gear": "Gear 1",
-      "predicted_cluster": "5_code_quality_and_dev_process",
-      "derived_verdict": "WORKTREE_ISOLATED"
+      "predicted_cluster": "5_code_quality_and_dev_process"
     },
     {
       "id": "SCN_046",
       "title": "Dead Internal Markdown Links in Documentation Tree",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.5,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 1",
-      "predicted_cluster": "5_code_quality_and_dev_process",
-      "derived_verdict": "BROKEN_LINKS_RESOLVED"
+      "predicted_cluster": "5_code_quality_and_dev_process"
     },
     {
       "id": "SCN_047",
       "title": "Conventional Commit Message Standardization for Semantic Release",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.5,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 1",
-      "predicted_cluster": "5_code_quality_and_dev_process",
-      "derived_verdict": "SEMVER_CONVENTIONAL_COMMIT_FORMULATED"
+      "predicted_cluster": "5_code_quality_and_dev_process"
     },
     {
       "id": "SCN_048",
       "title": "Cloudflare Turnstile Bot Defense Block on Scraper",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.5,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 1",
-      "predicted_cluster": "6_browser_and_web_automation",
-      "derived_verdict": "CAPTCHA_BOT_GATE_STOP_AND_REPORT"
+      "predicted_cluster": "6_browser_and_web_automation"
     },
     {
       "id": "SCN_049",
       "title": "Single-Page Application Detached DOM Memory Leak Diagnosis",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.5,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "6_browser_and_web_automation",
-      "derived_verdict": "HEAP_SNAPSHOT_DIFF_IDENTIFIED_EVENT_LISTENER_LEAK"
+      "predicted_cluster": "6_browser_and_web_automation"
     },
     {
       "id": "SCN_050",
       "title": "Core Web Vitals: 6.2s Largest Contentful Paint (LCP) Hero Image Bottleneck",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.5,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "6_browser_and_web_automation",
-      "derived_verdict": "LCP_OPTIMIZED_AVIF_PRELOAD_APPLIED"
+      "predicted_cluster": "6_browser_and_web_automation"
     },
     {
       "id": "SCN_051",
       "title": "Third-Party Cookie SameSite/Partitioned Authentication Redirection Loop",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.5,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "6_browser_and_web_automation",
-      "derived_verdict": "CHIPS_PARTITIONED_COOKIE_FLAGGED"
+      "predicted_cluster": "6_browser_and_web_automation"
     },
     {
       "id": "SCN_052",
       "title": "WCAG 2.1 AA Accessibility Audit: Color Contrast & ARIA Landmark Failures",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.0,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 80.0,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "6_browser_and_web_automation",
-      "derived_verdict": "ARIA_AND_CONTRAST_VIOLATIONS_REMEDIATED"
+      "predicted_cluster": "6_browser_and_web_automation"
     },
     {
       "id": "SCN_053",
       "title": "Next.js SSR Hydration Mismatch on Dynamic UTC Timestamps",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.3333333333333333,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 86.66666666666666,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "6_browser_and_web_automation",
-      "derived_verdict": "SUPPRESS_HYDRATION_OR_USEEFFECT_MOUNT_STABILIZED"
+      "predicted_cluster": "6_browser_and_web_automation"
     },
     {
       "id": "SCN_054",
       "title": "Automated Multi-Step Form Submission via Headless Playwright",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.5,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 1",
-      "predicted_cluster": "6_browser_and_web_automation",
-      "derived_verdict": "FORM_FILLED_AND_SUBMITTED_WITH_SNAPSHOT"
+      "predicted_cluster": "6_browser_and_web_automation"
     },
     {
       "id": "SCN_055",
       "title": "Extraction of Clean Markdown from Cluttered Ad-Laden Blog",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
-      "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "skill_recall": 0.0,
+      "mcp_recall": 0.5,
+      "case_score": 75.0,
       "predicted_gear": "Gear 1",
-      "predicted_cluster": "6_browser_and_web_automation",
-      "derived_verdict": "PRISTINE_MARKDOWN_EXTRACTED"
+      "predicted_cluster": "6_browser_and_web_automation"
     },
     {
       "id": "SCN_056",
@@ -729,25 +618,21 @@
       "gear_match": true,
       "cluster_match": true,
       "skill_recall": 1.0,
-      "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "mcp_recall": 0.6666666666666666,
+      "case_score": 96.66666666666666,
       "predicted_gear": "Gear 3",
-      "predicted_cluster": "7_research_and_intelligence",
-      "derived_verdict": "CITED_MULTI_SOURCE_REPORT_GENERATED"
+      "predicted_cluster": "7_research_and_intelligence"
     },
     {
       "id": "SCN_057",
       "title": "Google NotebookLM Grounded Querying with Direct Citation Extraction",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
-      "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "skill_recall": 0.5,
+      "mcp_recall": 0.0,
+      "case_score": 80.0,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "7_research_and_intelligence",
-      "derived_verdict": "NOTEBOOKLM_GROUNDED_ANSWER_VERIFIED"
+      "predicted_cluster": "7_research_and_intelligence"
     },
     {
       "id": "SCN_058",
@@ -756,11 +641,9 @@
       "cluster_match": true,
       "skill_recall": 1.0,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 99.99999999999999,
       "predicted_gear": "Gear 1",
-      "predicted_cluster": "7_research_and_intelligence",
-      "derived_verdict": "OFFICIAL_API_SPEC_RETRIEVED"
+      "predicted_cluster": "7_research_and_intelligence"
     },
     {
       "id": "SCN_059",
@@ -768,64 +651,54 @@
       "gear_match": true,
       "cluster_match": true,
       "skill_recall": 1.0,
-      "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "mcp_recall": 0.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 1",
-      "predicted_cluster": "7_research_and_intelligence",
-      "derived_verdict": "YT_DLP_TRANSCRIPT_EXTRACTED_AND_SUMMARIZED"
+      "predicted_cluster": "7_research_and_intelligence"
     },
     {
       "id": "SCN_060",
       "title": "Offline Skill Discovery in 2,850+ Antigravity Catalog for WebRTC Streaming",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
-      "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "skill_recall": 0.5,
+      "mcp_recall": 0.0,
+      "case_score": 80.0,
       "predicted_gear": "Gear 1",
-      "predicted_cluster": "7_research_and_intelligence",
-      "derived_verdict": "AAS_SKILL_IDENTIFIED_AND_STAGED"
+      "predicted_cluster": "7_research_and_intelligence"
     },
     {
       "id": "SCN_061",
       "title": "Supabase vs Firebase Cloud Pricing & Database Egress Due Diligence",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
-      "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "skill_recall": 0.5,
+      "mcp_recall": 0.5,
+      "case_score": 85.0,
       "predicted_gear": "Gear 3",
-      "predicted_cluster": "7_research_and_intelligence",
-      "derived_verdict": "EGRESS_COST_CALCULATED"
+      "predicted_cluster": "7_research_and_intelligence"
     },
     {
       "id": "SCN_062",
       "title": "ArXiv Transformer Inference Latency Paper Ingestion into Local Zotero",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
-      "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "skill_recall": 0.5,
+      "mcp_recall": 0.5,
+      "case_score": 85.0,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "7_research_and_intelligence",
-      "derived_verdict": "PDF_DOWNLOADED_AND_INDEXED_IN_ZOTERO"
+      "predicted_cluster": "7_research_and_intelligence"
     },
     {
       "id": "SCN_063",
       "title": "Firecrawl Deep Scrape of Municipal Zoning By-Laws and Setback Regulations",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.5,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "7_research_and_intelligence",
-      "derived_verdict": "ZONING_MAP_AND_BYLAWS_COMPILED"
+      "predicted_cluster": "7_research_and_intelligence"
     },
     {
       "id": "SCN_064",
@@ -834,11 +707,9 @@
       "cluster_match": true,
       "skill_recall": 1.0,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 99.99999999999999,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "8_visual_design_and_publishing",
-      "derived_verdict": "PDFTOPPM_QA_PASSED_ZERO_CLIPPING"
+      "predicted_cluster": "8_visual_design_and_publishing"
     },
     {
       "id": "SCN_065",
@@ -847,167 +718,141 @@
       "cluster_match": true,
       "skill_recall": 1.0,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 99.99999999999999,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "8_visual_design_and_publishing",
-      "derived_verdict": "SEMANTIC_TOKENS_GENERATED"
+      "predicted_cluster": "8_visual_design_and_publishing"
     },
     {
       "id": "SCN_066",
       "title": "shadcn/ui + Tailwind CSS Responsive Modal with Keyboard Trap",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.5,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "8_visual_design_and_publishing",
-      "derived_verdict": "ACCESSIBLE_RADIX_MODAL_RENDERED"
+      "predicted_cluster": "8_visual_design_and_publishing"
     },
     {
       "id": "SCN_067",
       "title": "Corporate Identity Program (CIP): 50 Deliverables & Vector Logo Suite",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.0,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 80.0,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "8_visual_design_and_publishing",
-      "derived_verdict": "CIP_GUIDELINES_EXPORTED"
+      "predicted_cluster": "8_visual_design_and_publishing"
     },
     {
       "id": "SCN_068",
       "title": "Cross-Platform High-Conversion Social Ad Banner Suite",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.5,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "8_visual_design_and_publishing",
-      "derived_verdict": "ASPECT_RATIOS_EXPORTED_1080x1080_1200x628"
+      "predicted_cluster": "8_visual_design_and_publishing"
     },
     {
       "id": "SCN_069",
       "title": "Interactive HTML Financial Slide Deck with Animated Chart.js Graphs",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.0,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 80.0,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "8_visual_design_and_publishing",
-      "derived_verdict": "PRESENTATION_SLIDES_RENDERED"
+      "predicted_cluster": "8_visual_design_and_publishing"
     },
     {
       "id": "SCN_070",
       "title": "Anatomy: Exploded Isometric SVG Technical Figure with Four-Tone Shading",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.5,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "8_visual_design_and_publishing",
-      "derived_verdict": "ISOMETRIC_PAINTERS_ORDER_PRESERVED"
+      "predicted_cluster": "8_visual_design_and_publishing"
     },
     {
       "id": "SCN_071",
       "title": "Excalidraw Microservices Event-Driven Architecture Visual Map",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.5,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "8_visual_design_and_publishing",
-      "derived_verdict": "EXCALIDRAW_JSON_GENERATED"
+      "predicted_cluster": "8_visual_design_and_publishing"
     },
     {
       "id": "SCN_072",
       "title": "2D Indian Cutout Puppet Animation: 1,700 fps Discrete AMD GPU Rendering",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
-      "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "skill_recall": 0.5,
+      "mcp_recall": 0.5,
+      "case_score": 85.0,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "9_animation_and_video_shorts",
-      "derived_verdict": "DRI_PRIME_1_ACCELERATION_ENFORCED"
+      "predicted_cluster": "9_animation_and_video_shorts"
     },
     {
       "id": "SCN_073",
       "title": "Antigravity Character Watercolor-and-Ink Cartoon Short Animation",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
-      "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "skill_recall": 0.5,
+      "mcp_recall": 0.0,
+      "case_score": 80.0,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "9_animation_and_video_shorts",
-      "derived_verdict": "P5_BRUSH_CHROME_HEADLESS_RENDERED"
+      "predicted_cluster": "9_animation_and_video_shorts"
     },
     {
       "id": "SCN_074",
       "title": "OpenMontage Local AI Video Studio Pipeline Execution at ~/Antigravity/Projects",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
-      "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "skill_recall": 0.5,
+      "mcp_recall": 0.0,
+      "case_score": 80.0,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "9_animation_and_video_shorts",
-      "derived_verdict": "STORYBOARD_CUTOUT_STAGED"
+      "predicted_cluster": "9_animation_and_video_shorts"
     },
     {
       "id": "SCN_075",
       "title": "Remotion 100% Synthetic 1080x1920 Vertical Short with Monotonic Interpolation",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.5,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "9_animation_and_video_shorts",
-      "derived_verdict": "TSX_CRASH_RULES_HONORED"
+      "predicted_cluster": "9_animation_and_video_shorts"
     },
     {
       "id": "SCN_076",
       "title": "Seedance 2.0 Generative Video Model Vertical Short Composition",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
-      "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "skill_recall": 0.5,
+      "mcp_recall": 0.5,
+      "case_score": 85.0,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "9_animation_and_video_shorts",
-      "derived_verdict": "LOCKED_CHARACTER_SYNCHRONIZED"
+      "predicted_cluster": "9_animation_and_video_shorts"
     },
     {
       "id": "SCN_077",
       "title": "Vox-Style Layered-Collage Historical Documentary Short",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.6666666666666666,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 93.33333333333333,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "9_animation_and_video_shorts",
-      "derived_verdict": "PARALLAX_CAMERA_CHOREOGRAPHED"
+      "predicted_cluster": "9_animation_and_video_shorts"
     },
     {
       "id": "SCN_078",
@@ -1016,115 +861,97 @@
       "cluster_match": true,
       "skill_recall": 1.0,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 99.99999999999999,
       "predicted_gear": "Gear 1",
-      "predicted_cluster": "9_animation_and_video_shorts",
-      "derived_verdict": "EBU_R128_NORMALIZED"
+      "predicted_cluster": "9_animation_and_video_shorts"
     },
     {
       "id": "SCN_079",
       "title": "Synced SFX Transition Placement and Ducking over Remotion Beat Grid",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.5,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "9_animation_and_video_shorts",
-      "derived_verdict": "SFX_PLAN_GENERATED_AND_MIXED"
+      "predicted_cluster": "9_animation_and_video_shorts"
     },
     {
       "id": "SCN_080",
       "title": "HyperFrames HTML-Rendered Kinetic Title Card Sequence",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
-      "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "skill_recall": 0.75,
+      "mcp_recall": 0.0,
+      "case_score": 85.0,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "9_animation_and_video_shorts",
-      "derived_verdict": "HYPERFRAMES_RENDER_COMPLETE"
+      "predicted_cluster": "9_animation_and_video_shorts"
     },
     {
       "id": "SCN_081",
       "title": "Blender 3D Heavy Cycles Viewport Rendering with Dedicated AMD GPU Acceleration",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
-      "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "skill_recall": 0.0,
+      "mcp_recall": 0.5,
+      "case_score": 75.0,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "9_animation_and_video_shorts",
-      "derived_verdict": "BLENDER_ROCM_HIP_ENABLED"
+      "predicted_cluster": "9_animation_and_video_shorts"
     },
     {
       "id": "SCN_082",
       "title": "Claude Hand-Drawn Frame-by-Frame Watercolor Aesthetic",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.5,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "10_animation_visual_references",
-      "derived_verdict": "HANDDRAWN_TEXTURE_STAGED"
+      "predicted_cluster": "10_animation_visual_references"
     },
     {
       "id": "SCN_083",
       "title": "Kurzgesagt Cosmological Vector Style with High-Vibrancy Palette",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.5,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "10_animation_visual_references",
-      "derived_verdict": "FLAT_VECTOR_GRADIENTS_ALIGNED"
+      "predicted_cluster": "10_animation_visual_references"
     },
     {
       "id": "SCN_084",
       "title": "Dan Koe Minimalist Typography & Stoic Philosophical Pacing",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.5,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "10_animation_visual_references",
-      "derived_verdict": "BLACK_WHITE_TYPOGRAPHY_PACED"
+      "predicted_cluster": "10_animation_visual_references"
     },
     {
       "id": "SCN_085",
       "title": "Low-Poly 3D Isometric Urban Scene Camera Turntable",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.3333333333333333,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 86.66666666666666,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "10_animation_visual_references",
-      "derived_verdict": "FLAT_SHADED_LOW_POLY_RENDERED"
+      "predicted_cluster": "10_animation_visual_references"
     },
     {
       "id": "SCN_086",
       "title": "High-Energy Kinetic Stick Figure Comedy Timing Rig",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.5,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "10_animation_visual_references",
-      "derived_verdict": "DYNAMIC_IMPACT_FRAMES_TIMED"
+      "predicted_cluster": "10_animation_visual_references"
     },
     {
       "id": "SCN_087",
@@ -1133,11 +960,9 @@
       "cluster_match": true,
       "skill_recall": 1.0,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 99.99999999999999,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "10_animation_visual_references",
-      "derived_verdict": "MEDICAL_ACCURACY_CROSS_SECTION_RENDERED"
+      "predicted_cluster": "10_animation_visual_references"
     },
     {
       "id": "SCN_088",
@@ -1146,11 +971,9 @@
       "cluster_match": true,
       "skill_recall": 1.0,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 99.99999999999999,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "10_animation_visual_references",
-      "derived_verdict": "FACE_EMBEDDING_DRIFT_PREVENTED"
+      "predicted_cluster": "10_animation_visual_references"
     },
     {
       "id": "SCN_089",
@@ -1159,11 +982,9 @@
       "cluster_match": true,
       "skill_recall": 1.0,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 99.99999999999999,
       "predicted_gear": "Gear 1",
-      "predicted_cluster": "11_office_documents_and_vault",
-      "derived_verdict": "STYLED_DOCX_GENERATED"
+      "predicted_cluster": "11_office_documents_and_vault"
     },
     {
       "id": "SCN_090",
@@ -1172,11 +993,9 @@
       "cluster_match": true,
       "skill_recall": 1.0,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 99.99999999999999,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "11_office_documents_and_vault",
-      "derived_verdict": "PPTX_SLIDES_GENERATED"
+      "predicted_cluster": "11_office_documents_and_vault"
     },
     {
       "id": "SCN_091",
@@ -1185,11 +1004,9 @@
       "cluster_match": true,
       "skill_recall": 1.0,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 99.99999999999999,
       "predicted_gear": "Gear 1",
-      "predicted_cluster": "11_office_documents_and_vault",
-      "derived_verdict": "FORMULAS_INJECTED_AND_FORMATTED"
+      "predicted_cluster": "11_office_documents_and_vault"
     },
     {
       "id": "SCN_092",
@@ -1198,11 +1015,9 @@
       "cluster_match": true,
       "skill_recall": 1.0,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 99.99999999999999,
       "predicted_gear": "Gear 1",
-      "predicted_cluster": "11_office_documents_and_vault",
-      "derived_verdict": "OCR_TEXT_LAYER_EMBEDDED"
+      "predicted_cluster": "11_office_documents_and_vault"
     },
     {
       "id": "SCN_093",
@@ -1211,24 +1026,20 @@
       "cluster_match": false,
       "skill_recall": 0.0,
       "mcp_recall": 0.0,
-      "verdict_match": true,
-      "case_score": 30.0,
+      "case_score": 0.0,
       "predicted_gear": "Gear 1",
-      "predicted_cluster": "1_cognitive_strategy_and_truth",
-      "derived_verdict": "DATAVIEW_DQL_QUERY_OPTIMIZED"
+      "predicted_cluster": "1_cognitive_strategy_and_truth"
     },
     {
       "id": "SCN_094",
       "title": "Self-Hosted Kanboard API Task Progression on Raspberry Pi",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.0,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 80.0,
       "predicted_gear": "Gear 1",
-      "predicted_cluster": "11_office_documents_and_vault",
-      "derived_verdict": "KANBOARD_JSONRPC_TASK_MOVED"
+      "predicted_cluster": "11_office_documents_and_vault"
     },
     {
       "id": "SCN_095",
@@ -1237,11 +1048,9 @@
       "cluster_match": true,
       "skill_recall": 1.0,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 99.99999999999999,
       "predicted_gear": "Gear 1",
-      "predicted_cluster": "12_gemini_and_antigravity_core",
-      "derived_verdict": "GOOGLE_GENAI_SDK_IMPORTED"
+      "predicted_cluster": "12_gemini_and_antigravity_core"
     },
     {
       "id": "SCN_096",
@@ -1250,63 +1059,53 @@
       "cluster_match": true,
       "skill_recall": 1.0,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 99.99999999999999,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "12_gemini_and_antigravity_core",
-      "derived_verdict": "LIVE_WEBSOCKET_SESSION_ESTABLISHED"
+      "predicted_cluster": "12_gemini_and_antigravity_core"
     },
     {
       "id": "SCN_097",
       "title": "Gemini Omni Flash Generative Video First-and-Last Frame Stitching",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.5,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "12_gemini_and_antigravity_core",
-      "derived_verdict": "OMNI_FLASH_TRANSITION_RENDERED"
+      "predicted_cluster": "12_gemini_and_antigravity_core"
     },
     {
       "id": "SCN_098",
       "title": "Gemini Web App Neon 4 Deeper Analysis Falsification Verification",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.5,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 89.99999999999999,
       "predicted_gear": "Gear 3",
-      "predicted_cluster": "12_gemini_and_antigravity_core",
-      "derived_verdict": "NEON_DEEP_ANALYSIS_VERIFIED"
+      "predicted_cluster": "12_gemini_and_antigravity_core"
     },
     {
       "id": "SCN_099",
       "title": "Antigravity Plugin Packaging with Namespaced Custom Skills and Hook Triggers",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
+      "skill_recall": 0.3333333333333333,
       "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "case_score": 86.66666666666666,
       "predicted_gear": "Gear 1",
-      "predicted_cluster": "12_gemini_and_antigravity_core",
-      "derived_verdict": "PLUGIN_MANIFEST_VALIDATED"
+      "predicted_cluster": "12_gemini_and_antigravity_core"
     },
     {
       "id": "SCN_100",
       "title": "Native Swarm Multi-Agent Collaboration with Stall Monitor Recovery",
       "gear_match": true,
       "cluster_match": true,
-      "skill_recall": 1.0,
-      "mcp_recall": 1.0,
-      "verdict_match": true,
-      "case_score": 100.0,
+      "skill_recall": 0.1111111111111111,
+      "mcp_recall": 0.5,
+      "case_score": 77.22222222222223,
       "predicted_gear": "Gear 2",
-      "predicted_cluster": "12_gemini_and_antigravity_core",
-      "derived_verdict": "SWARM_MESSAGE_BOARD_COLLABORATION_HEALTHY"
+      "predicted_cluster": "12_gemini_and_antigravity_core"
     }
   ]
 }

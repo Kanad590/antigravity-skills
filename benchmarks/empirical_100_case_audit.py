@@ -111,7 +111,9 @@ class ExactBoundaryCognitiveRouter:
         return "1_cognitive_strategy_and_truth"
 
     def route_case(self, case: dict) -> dict:
-        text = f"{case['title']} {json.dumps(case.get('ground_truth', {}))}"
+        # P0 Fix: Strict Zero-Leakage Evaluation.
+        # Router ONLY sees the scenario title / query, NEVER the ground_truth or expected answers!
+        text = case["title"]
         pred_gear = self.classify_gear(text)
         pred_cluster = self.classify_cluster(text)
 
@@ -146,19 +148,24 @@ class ExactBoundaryCognitiveRouter:
         }
 
         pool = cluster_skills.get(pred_cluster, [])
-        predicted_skills = [s for s in pool if any(w in text.lower() for w in s.replace("-", " ").split()) or s in case["expected_skills"]]
+        # Honest Zero-Leakage Skill Selection: Match purely on semantic words from text
+        text_words = set(re.findall(r"\w+", text.lower()))
+        predicted_skills = []
+        for s in pool:
+            s_words = set(s.replace("-", " ").split())
+            if s_words & text_words or any(w in text.lower() for w in s_words):
+                predicted_skills.append(s)
         if not predicted_skills:
             predicted_skills = pool[:3]
 
         mcp_pool = cluster_mcps.get(pred_cluster, [])
-        predicted_mcps = [m for m in mcp_pool if m in case["expected_mcps"]] or mcp_pool[:2]
+        predicted_mcps = mcp_pool[:3]
 
         return {
             "predicted_gear": pred_gear,
             "predicted_cluster": pred_cluster,
             "predicted_skills": predicted_skills,
-            "predicted_mcps": predicted_mcps,
-            "derived_verdict": case["ground_truth"]["verdict"]
+            "predicted_mcps": predicted_mcps
         }
 
 def run_benchmark():
@@ -200,15 +207,11 @@ def run_benchmark():
         mcp_recall = len(expected_m.intersection(pred_m)) / len(expected_m) if expected_m else 1.0
         total_mcp_recall += mcp_recall
 
-        verdict_match = 1.0 if routing["derived_verdict"] == gt_verdict else 0.0
-        total_verdict_match += verdict_match
-
         case_score = (
-            (verdict_match * 0.30) +
-            (cluster_match * 0.25) +
+            (cluster_match * 0.40) +
+            (gear_match * 0.30) +
             (skill_recall * 0.20) +
-            (mcp_recall * 0.15) +
-            (gear_match * 0.10)
+            (mcp_recall * 0.10)
         ) * 100.0
 
         scores.append(case_score)
@@ -219,11 +222,9 @@ def run_benchmark():
             "cluster_match": cluster_match == 1.0,
             "skill_recall": skill_recall,
             "mcp_recall": mcp_recall,
-            "verdict_match": verdict_match == 1.0,
             "case_score": case_score,
             "predicted_gear": routing["predicted_gear"],
-            "predicted_cluster": routing["predicted_cluster"],
-            "derived_verdict": routing["derived_verdict"]
+            "predicted_cluster": routing["predicted_cluster"]
         })
 
     n = len(cases_bank.CASES_BANK)
@@ -232,27 +233,24 @@ def run_benchmark():
     cluster_acc = (total_cluster_match / n) * 100.0
     avg_skill_recall = (total_skill_recall / n) * 100.0
     avg_mcp_recall = (total_mcp_recall / n) * 100.0
-    verdict_acc = (total_verdict_match / n) * 100.0
 
     print(f"\n📊 EMPIRICAL EVALUATION METRICS (N = {n}):")
     print(f"   • Gear Classification Accuracy:      {gear_acc:.2f}%")
     print(f"   • Cluster Routing Accuracy:          {cluster_acc:.2f}%")
     print(f"   • Key Skill Retrieval Recall:        {avg_skill_recall:.2f}%")
     print(f"   • Key MCP Tool Retrieval Recall:     {avg_mcp_recall:.2f}%")
-    print(f"   • Verdict Ground-Truth Alignment:    {verdict_acc:.2f}%")
     print(f"   -------------------------------------------------")
     print(f"🎯 OVERALL MEAN COMPOSITE FIDELITY:    {mean_score:.2f}%")
     print("=" * 70)
 
-    out_path = Path("/home/saman/.gemini/antigravity/brain/95104be2-856c-4fcf-a441-f900b10dbcfe/empirical_100_case_results.json")
+    out_path = Path(__file__).parent / "empirical_100_case_results.json"
     out_path.write_text(json.dumps({
         "metrics": {
             "mean_composite_fidelity": mean_score,
             "gear_accuracy": gear_acc,
             "cluster_accuracy": cluster_acc,
             "skill_recall": avg_skill_recall,
-            "mcp_recall": avg_mcp_recall,
-            "verdict_accuracy": verdict_acc
+            "mcp_recall": avg_mcp_recall
         },
         "cases": cases_result
     }, indent=2), encoding="utf-8")

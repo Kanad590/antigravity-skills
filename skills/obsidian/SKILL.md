@@ -30,23 +30,23 @@ Tool | Purpose | Command
 
 | Plugin | Downloads | Syntax Delimiter / Codeblock | Key Directives / Tokens | Reference Guide |
 | :--- | :---: | :--- | :--- | :--- |
-| **Dataview** | 5.2M | ````dataview```` / ````dataviewjs```` | `TABLE`, `TASK`, `LIST`, `FROM`, `WHERE`, `FLATTEN`, `GROUP BY`, inline `key:: value`, `[key:: value]`, `$= ...` | [dataview_reference.md](file:///home/saman/.agents/skills/obsidian/references/dataview_reference.md) |
-| **Tasks** | 4.5M | ````tasks```` & Checkbox emojis | `📅` Due, `⏳` Sched, `🛫` Start, `➕` Created, `✅` Done, `🔁` Repeat, `🆔` ID, `⛔` Depends, `🔺` Priority | [tasks_plugin_reference.md](file:///home/saman/.agents/skills/obsidian/references/tasks_plugin_reference.md) |
-| **Templater** | 6.0M | `<% ... %>`, `<%* ... %>`, `<%+ ... %>` | `tp.file.*`, `tp.date.now()`, `tp.system.prompt()`, `tp.system.suggester()`, `tp.frontmatter.*` | [templater_reference.md](file:///home/saman/.agents/skills/obsidian/references/templater_reference.md) |
-| **Meta Bind** | 590K | `INPUT[...]`, `VIEW[...]`, ````meta-bind-button```` | `INPUT[toggle:prop]`, `INPUT[slider(...):prop]`, `INPUT[select(...):prop]`, `VIEW[{prop}]`, `BUTTON[id]` | [meta_bind_reference.md](file:///home/saman/.agents/skills/obsidian/references/meta_bind_reference.md) |
-| **Tracker** | 370K | ````tracker```` | `searchType` (frontmatter, dvField, tag, task.done), `searchTarget`, `line:`, `bar:`, `month:`, `summary:` | [tracker_reference.md](file:///home/saman/.agents/skills/obsidian/references/tracker_reference.md) |
-| **Charts** | 334K | ````chart```` | `type: bar/line/pie/radar`, `labels: [...]`, `series: [{title, data}]`, `window.renderChart()` | [charts_reference.md](file:///home/saman/.agents/skills/obsidian/references/charts_reference.md) |
-| **Spaced Repetition**| 625K | `Q::A`, `T:::D`, `Q \n ? \n A`, `==cloze==` | `#flashcards`, `#flashcards/deck`, `==hidden::hint==`, frontmatter: `sr-due`, `sr-interval`, `sr-ease` | [spaced_repetition_reference.md](file:///home/saman/.agents/skills/obsidian/references/spaced_repetition_reference.md) |
-| **Kanban** | 2.8M | `kanban-plugin: basic` | Columns: `## Heading`, Cards: `- [ ] Card @{YYYY-MM-DD}`, Settings: `%% kanban:settings ... %%` | [kanban_plugin_reference.md](file:///home/saman/.agents/skills/obsidian/references/kanban_plugin_reference.md) |
-| **Excalidraw** | 8.8M | `excalidraw-plugin: parsed` | Embed: `![[drawing.excalidraw|500]]`, Area crop: `![[drawing.excalidraw#^area=Frame]]`, live transclusion | [excalidraw_reference.md](file:///home/saman/.agents/skills/obsidian/references/excalidraw_reference.md) |
-| **Canvas** | Core | `.canvas` JSON | Nodes (`text`, `file`, `group`), coordinates `(x, y, width, height)`, chromatic tags `"1"` to `"6"`, edges | [canvas_specification.md](file:///home/saman/.agents/skills/obsidian/references/canvas_specification.md) |
-| **Breadcrumbs** | 429K | ````breadcrumbs```` & Inline fields | `up:: [[Parent]]`, `down:: [[Child]]`, `same:: [[Sibling]]`, `next:: [[Next]]`, `prev:: [[Prev]]`, `type: tree/mermaid` | [breadcrumbs_reference.md](file:///home/saman/.agents/skills/obsidian/references/breadcrumbs_reference.md) |
-| **Buttons** | 492K | ````button```` | `name <Label>`, `type <command/link/template/text>`, `action <Target>`, `color <blue/green/red>` | [buttons_reference.md](file:///home/saman/.agents/skills/obsidian/references/buttons_reference.md) |
-| **Advanced Tables**| 3.3M | Markdown Tables + Formulas | `Tab` / `Enter` navigation, formula comments: `<!-- tbl-formulas: r2c4 = r2c2 * r2c3; ... -->` | [advanced_tables_reference.md](file:///home/saman/.agents/skills/obsidian/references/advanced_tables_reference.md) |
-| **Multi-Column**| 224K | Delimiters & Callouts | `===start-multi-column`, ````column-settings````, `===column-break===`, `===end-multi-column` | [multi_column_reference.md](file:///home/saman/.agents/skills/obsidian/references/multi_column_reference.md) |
-| **Bases (Core)**| Core 1.8+ | Native `.base` or YAML views | Real-time database table, card gallery, list, and board views over vault note frontmatter properties | [bases_core_plugin.md](file:///home/saman/.agents/skills/obsidian/references/bases_core_plugin.md) |
-| **Admonition** | 1.0M | ````ad-<type>```` & Callouts | `title: <String>`, `collapse: open/closed`, `color: R, G, B` -> Converts directly to native `> [!type]` | [admonition_reference.md](file:///home/saman/.agents/skills/obsidian/references/admonition_reference.md) |
-| **Zotero Integration** | 1.5M | Nunjucks `{{ ... }}`, `{% ... %}` | `{{title}}`, `{{annotations}}`, `annot.annotatedText`, `annot.comment`, `annot.desktopURI`, Port `23119` | [zotero_integration_reference.md](file:///home/saman/.agents/skills/obsidian/references/zotero_integration_reference.md) |
+| **Dataview** | 5.2M | ````dataview```` / ````dataviewjs```` | `TABLE`, `TASK`, `LIST`, `FROM`, `WHERE`, `FLATTEN`, `GROUP BY`, inline `key:: value`, `[key:: value]`, `$= ...` | [dataview_reference.md](./references/dataview_reference.md) |
+| **Tasks** | 4.5M | ````tasks```` & Checkbox emojis | `📅` Due, `⏳` Sched, `🛫` Start, `➕` Created, `✅` Done, `🔁` Repeat, `🆔` ID, `⛔` Depends, `🔺` Priority | [tasks_plugin_reference.md](./references/tasks_plugin_reference.md) |
+| **Templater** | 6.0M | `<% ... %>`, `<%* ... %>`, `<%+ ... %>` | `tp.file.*`, `tp.date.now()`, `tp.system.prompt()`, `tp.system.suggester()`, `tp.frontmatter.*` | [templater_reference.md](./references/templater_reference.md) |
+| **Meta Bind** | 590K | `INPUT[...]`, `VIEW[...]`, ````meta-bind-button```` | `INPUT[toggle:prop]`, `INPUT[slider(...):prop]`, `INPUT[select(...):prop]`, `VIEW[{prop}]`, `BUTTON[id]` | [meta_bind_reference.md](./references/meta_bind_reference.md) |
+| **Tracker** | 370K | ````tracker```` | `searchType` (frontmatter, dvField, tag, task.done), `searchTarget`, `line:`, `bar:`, `month:`, `summary:` | [tracker_reference.md](./references/tracker_reference.md) |
+| **Charts** | 334K | ````chart```` | `type: bar/line/pie/radar`, `labels: [...]`, `series: [{title, data}]`, `window.renderChart()` | [charts_reference.md](./references/charts_reference.md) |
+| **Spaced Repetition**| 625K | `Q::A`, `T:::D`, `Q \n ? \n A`, `==cloze==` | `#flashcards`, `#flashcards/deck`, `==hidden::hint==`, frontmatter: `sr-due`, `sr-interval`, `sr-ease` | [spaced_repetition_reference.md](./references/spaced_repetition_reference.md) |
+| **Kanban** | 2.8M | `kanban-plugin: basic` | Columns: `## Heading`, Cards: `- [ ] Card @{YYYY-MM-DD}`, Settings: `%% kanban:settings ... %%` | [kanban_plugin_reference.md](./references/kanban_plugin_reference.md) |
+| **Excalidraw** | 8.8M | `excalidraw-plugin: parsed` | Embed: `![[drawing.excalidraw|500]]`, Area crop: `![[drawing.excalidraw#^area=Frame]]`, live transclusion | [excalidraw_reference.md](./references/excalidraw_reference.md) |
+| **Canvas** | Core | `.canvas` JSON | Nodes (`text`, `file`, `group`), coordinates `(x, y, width, height)`, chromatic tags `"1"` to `"6"`, edges | [canvas_specification.md](./references/canvas_specification.md) |
+| **Breadcrumbs** | 429K | ````breadcrumbs```` & Inline fields | `up:: [[Parent]]`, `down:: [[Child]]`, `same:: [[Sibling]]`, `next:: [[Next]]`, `prev:: [[Prev]]`, `type: tree/mermaid` | [breadcrumbs_reference.md](./references/breadcrumbs_reference.md) |
+| **Buttons** | 492K | ````button```` | `name <Label>`, `type <command/link/template/text>`, `action <Target>`, `color <blue/green/red>` | [buttons_reference.md](./references/buttons_reference.md) |
+| **Advanced Tables**| 3.3M | Markdown Tables + Formulas | `Tab` / `Enter` navigation, formula comments: `<!-- tbl-formulas: r2c4 = r2c2 * r2c3; ... -->` | [advanced_tables_reference.md](./references/advanced_tables_reference.md) |
+| **Multi-Column**| 224K | Delimiters & Callouts | `===start-multi-column`, ````column-settings````, `===column-break===`, `===end-multi-column` | [multi_column_reference.md](./references/multi_column_reference.md) |
+| **Bases (Core)**| Core 1.8+ | Native `.base` or YAML views | Real-time database table, card gallery, list, and board views over vault note frontmatter properties | [bases_core_plugin.md](./references/bases_core_plugin.md) |
+| **Admonition** | 1.0M | ````ad-<type>```` & Callouts | `title: <String>`, `collapse: open/closed`, `color: R, G, B` -> Converts directly to native `> [!type]` | [admonition_reference.md](./references/admonition_reference.md) |
+| **Zotero Integration** | 1.5M | Nunjucks `{{ ... }}`, `{% ... %}` | `{{title}}`, `{{annotations}}`, `annot.annotatedText`, `annot.comment`, `annot.desktopURI`, Port `23119` | [zotero_integration_reference.md](./references/zotero_integration_reference.md) |
 
 ---
 
@@ -110,7 +110,7 @@ line:
 
 ## 🔗 Zero-API-Key Ecosystem Integrations (Upgraded Tooling)
 
-In addition to the built-in scripts in [scripts/](file:///home/saman/.agents/skills/obsidian/scripts/), pair `/obsidian` directly with these local zero-key tools:
+In addition to the built-in scripts in [scripts/](./scripts/), pair `/obsidian` directly with these local zero-key tools:
 
 - **Web-to-Vault Clean Clipper ([defuddle](file:///home/saman/.gemini/config/plugins/obsidian-extras/skills/defuddle/SKILL.md)):**
   `defuddle parse "<url>" --md` strips navigation/ads and outputs clean Markdown ready to save in the vault with frontmatter and collapsed recall callouts.
@@ -143,21 +143,21 @@ In addition to the built-in scripts in [scripts/](file:///home/saman/.agents/ski
 ## 📚 Complete Reference Library
 
 The `references/` directory contains deep-dive specifications with edge-case handling and complete code examples:
-- [Advanced Markdown & Embeds](file:///home/saman/.agents/skills/obsidian/references/markdown_advanced_syntax.md)
-- [Dataview & DataviewJS Guide](file:///home/saman/.agents/skills/obsidian/references/dataview_reference.md)
-- [Obsidian Tasks Plugin Specification](file:///home/saman/.agents/skills/obsidian/references/tasks_plugin_reference.md)
-- [Templater Automation & API Reference](file:///home/saman/.agents/skills/obsidian/references/templater_reference.md)
-- [Meta Bind Interactive UI Specification](file:///home/saman/.agents/skills/obsidian/references/meta_bind_reference.md)
-- [Obsidian Tracker Syntax Guide](file:///home/saman/.agents/skills/obsidian/references/tracker_reference.md)
-- [Obsidian Charts & Chart.js Integration](file:///home/saman/.agents/skills/obsidian/references/charts_reference.md)
-- [Spaced Repetition (SRS) Flashcards](file:///home/saman/.agents/skills/obsidian/references/spaced_repetition_reference.md)
-- [Obsidian Kanban Boards](file:///home/saman/.agents/skills/obsidian/references/kanban_plugin_reference.md)
-- [Obsidian Canvas (.canvas) JSON Schema](file:///home/saman/.agents/skills/obsidian/references/canvas_specification.md)
-- [Excalidraw Markdown & Transclusions](file:///home/saman/.agents/skills/obsidian/references/excalidraw_reference.md)
-- [Breadcrumbs Hierarchy & Directed Graphs](file:///home/saman/.agents/skills/obsidian/references/breadcrumbs_reference.md)
-- [Buttons Plugin Reference](file:///home/saman/.agents/skills/obsidian/references/buttons_reference.md)
-- [Advanced Tables & Formula Calculations](file:///home/saman/.agents/skills/obsidian/references/advanced_tables_reference.md)
-- [Multi-Column Markdown & Callout Layouts](file:///home/saman/.agents/skills/obsidian/references/multi_column_reference.md)
-- [Admonition Codeblocks & Callouts](file:///home/saman/.agents/skills/obsidian/references/admonition_reference.md)
-- [Obsidian Bases Core Plugin](file:///home/saman/.agents/skills/obsidian/references/bases_core_plugin.md)
-- [Zotero Integration Plugin Specification](file:///home/saman/.agents/skills/obsidian/references/zotero_integration_reference.md)
+- [Advanced Markdown & Embeds](./references/markdown_advanced_syntax.md)
+- [Dataview & DataviewJS Guide](./references/dataview_reference.md)
+- [Obsidian Tasks Plugin Specification](./references/tasks_plugin_reference.md)
+- [Templater Automation & API Reference](./references/templater_reference.md)
+- [Meta Bind Interactive UI Specification](./references/meta_bind_reference.md)
+- [Obsidian Tracker Syntax Guide](./references/tracker_reference.md)
+- [Obsidian Charts & Chart.js Integration](./references/charts_reference.md)
+- [Spaced Repetition (SRS) Flashcards](./references/spaced_repetition_reference.md)
+- [Obsidian Kanban Boards](./references/kanban_plugin_reference.md)
+- [Obsidian Canvas (.canvas) JSON Schema](./references/canvas_specification.md)
+- [Excalidraw Markdown & Transclusions](./references/excalidraw_reference.md)
+- [Breadcrumbs Hierarchy & Directed Graphs](./references/breadcrumbs_reference.md)
+- [Buttons Plugin Reference](./references/buttons_reference.md)
+- [Advanced Tables & Formula Calculations](./references/advanced_tables_reference.md)
+- [Multi-Column Markdown & Callout Layouts](./references/multi_column_reference.md)
+- [Admonition Codeblocks & Callouts](./references/admonition_reference.md)
+- [Obsidian Bases Core Plugin](./references/bases_core_plugin.md)
+- [Zotero Integration Plugin Specification](./references/zotero_integration_reference.md)
