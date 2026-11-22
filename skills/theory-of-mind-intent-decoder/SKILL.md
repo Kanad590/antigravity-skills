@@ -44,14 +44,14 @@ Antigravity সাধারণত একজন কঠোর সফটওয়্�
 
 এই স্কিলটি ৩টি সুনির্দিষ্ট বৈজ্ঞানিক রেফারেন্স ফাইলের ওপর ভিত্তি করে কাজ করে:
 
-1. **[Bengali Conversational Pragmatics](file:///home/saman/.gemini/config/skills/theory-of-mind-intent-decoder/references/bengali_conversational_pragmatics.md):**
+1. **[Bengali Conversational Pragmatics](./references/bengali_conversational_pragmatics.md):**
    - Google GoEmotions ২৭-আবেগীয় শ্রেণিবিন্যাস (Bengali Adaptation)।
    - Mendeley 80k Multi-label Emotion & Sentiment Corpus।
    - বাংলা ভাষার অভিমান (Abhiman), ক্ষোভ, শ্লেষ (Sarcasm), এবং উহ্য কর্তা/সর্বনাম (Ellipsis) সমাধানের স্পষ্ট গাইড।
-2. **[Kanad's Psychological Compass](file:///home/saman/.gemini/config/skills/theory-of-mind-intent-decoder/references/kanad_psychological_compass.md):**
-   - কণাদের জন্মকুণ্ডলী ও যাচাইকৃত মনস্তত্ত্ব: বৃষে তুঙ্গী চন্দ্র ও শুক্রের নান্দনিকতা, কর্কটে অশ্লেষা রাহুর অতি-সতর্ক রাডার, বক্রী মঙ্গলের আত্মমর্যাদা ও সাইলেন্ট কাট-অফ, এবং মীনের বুধের রূপক প্রজ্ঞা।
-   - রাহু-মঙ্গল দশার (২০২৬) স্বাধীনতা ও স্বায়ত্তশাসনের তীব্র আকুলতা।
-3. **[Theory of Mind Playbook](file:///home/saman/.gemini/config/skills/theory-of-mind-intent-decoder/references/theory_of_mind_playbook.md):**
+2. **[Psychological Compass & Mind Architecture](./references/kanad_psychological_compass.md):**
+   - ব্যবহারকারীর মনস্তাত্ত্বিক মানচিত্র ও জ্ঞানীয় প্যাটার্ন: নান্দনিকতা, অতি-সতর্ক রাডার, আত্মমর্যাদা ও সাইলেন্ট কাট-অফ, এবং রূপক প্রজ্ঞা।
+   - স্বাধীনতা ও স্বায়ত্তশাসনের তীব্র আকুলতা।
+3. **[Theory of Mind Playbook](./references/theory_of_mind_playbook.md):**
    - BDEI (Belief-Desire-Emotion-Intent) কম্পিউটেশনাল আর্কিটেকচার।
    - সামাজিক অনুমান ও নীরবতার পেছনের সত্য উন্মোচনের কৌশল।
 
