@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Tuta Mail Automated Desktop Sender (Pop!_OS COSMIC Wayland)
-Composes and sends an email via Tuta Mail Flatpak using native Wayland automation.
+Tuta Mail Automated Desktop Sender (Pop!_OS COSMIC Wayland - v2.0)
+Composes and sends an email via Tuta Mail Flatpak using ag-gui v2.0 primitives
+(clean screenshot capture, visual diff anchoring, and stdin-safe typing).
 """
 
 import sys
@@ -9,34 +10,27 @@ import os
 import time
 import argparse
 import subprocess
+import importlib.util
+import importlib.machinery
 from PIL import Image
 import numpy as np
 
-ENV = os.environ.copy()
-ENV["WAYLAND_DISPLAY"] = "wayland-1"
-ENV["DISPLAY"] = ":1"
+
+def _load_ag():
+    loader = importlib.machinery.SourceFileLoader("ag_gui_engine", "/home/saman/.local/bin/ag-gui")
+    spec = importlib.util.spec_from_loader("ag_gui_engine", loader)
+    mod = importlib.util.module_from_spec(spec)
+    loader.exec_module(mod)
+    return mod
 
 
-def run_cmd(cmd):
-    return subprocess.run(cmd, env=ENV, capture_output=True, text=True, check=False)
-
-
-def take_screenshot(path="/tmp/tuta_action.png"):
-    res = run_cmd(["cosmic-screenshot", "--interactive=false", "--notify=false", "-s", "/tmp"])
-    latest = subprocess.check_output("ls -t /tmp/Screenshot*.png | head -n 1", shell=True).decode().strip()
-    run_cmd(["cp", "-f", latest, path])
-    return path
-
-
-def cycle_to_close_button(max_attempts=30):
-    """
-    Cycles Tab until focus lands on the 'Close' button of the compose modal (x around 202-275, y around 91-147).
-    """
+def cycle_to_close_button(ag, max_attempts=30):
+    """Cycles Tab until focus lands on the 'Close' button of the compose modal."""
     for _ in range(max_attempts):
-        before = take_screenshot("/tmp/tuta_diff_1.png")
-        run_cmd(["wtype", "-k", "Tab"])
-        time.sleep(0.12)
-        after = take_screenshot("/tmp/tuta_diff_2.png")
+        before = ag.take_screenshot("/tmp/tuta_diff_1.png")
+        ag.press_key("Tab")
+        time.sleep(0.10)
+        after = ag.take_screenshot("/tmp/tuta_diff_2.png")
 
         im1 = Image.open(before).convert("RGB")
         im2 = Image.open(after).convert("RGB")
@@ -51,78 +45,77 @@ def cycle_to_close_button(max_attempts=30):
 
 
 def send_email(to_addr, subject, body, password=None):
+    ag = _load_ag()
+    env = ag.get_desktop_env()
     print(f"Launching or focusing Tuta Mail for {to_addr}...")
-    run_cmd(["flatpak", "run", "com.tutanota.Tutanota"])
-    time.sleep(1.0)
+    subprocess.Popen(
+        ["flatpak", "run", "com.tutanota.Tutanota"],
+        env=env,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
+    ag.wait_for_change(timeout=5.0)
+    ag.focus_window("Tuta", persistent=False, maximize=True)
+    time.sleep(0.25)
+
+    if not ag.is_window_focused("Tuta"):
+        print("Error: Focus Guard aborted — Tuta Mail is not the active window.", file=sys.stderr)
+        return False
 
     # Open Compose modal
-    run_cmd(["wtype", "-M", "ctrl", "-k", "n", "-m", "ctrl"])
-    time.sleep(0.8)
+    ag.hotkey("ctrl", "n")
+    ag.wait_for_change(timeout=3.0)
 
-    # Find Close button anchor
-    if not cycle_to_close_button():
+    if not cycle_to_close_button(ag):
         print("Warning: Could not anchor on Close button, attempting direct Tab navigation...")
 
-    # From Close button:
-    # Tab 1: Send button
-    # Tab 2: To input field
-    run_cmd(["wtype", "-k", "Tab"])
-    time.sleep(0.1)
-    run_cmd(["wtype", "-k", "Tab"])
-    time.sleep(0.15)
+    ag.press_key("Tab")
+    time.sleep(0.08)
+    ag.press_key("Tab")
+    time.sleep(0.10)
 
-    # Type To address with delay
     print(f"Typing recipient: {to_addr}")
-    run_cmd(["wtype", "-d", "20", to_addr])
-    time.sleep(0.3)
-    run_cmd(["wtype", "-k", "Return"])
-    time.sleep(0.3)
+    ag.type_text(to_addr, delay=0.005)
+    time.sleep(0.20)
+    ag.press_key("Return")
+    time.sleep(0.25)
 
-    # If external recipient, Tuta presents password field
     if password:
-        # 6 Tabs to Password field
         for _ in range(6):
-            run_cmd(["wtype", "-k", "Tab"])
-            time.sleep(0.08)
-        run_cmd(["wtype", "-d", "20", password])
-        time.sleep(0.2)
-        # 2 Tabs to Subject
-        run_cmd(["wtype", "-k", "Tab"])
-        run_cmd(["wtype", "-k", "Tab"])
+            ag.press_key("Tab")
+            time.sleep(0.06)
+        ag.type_text(password, delay=0.005)
+        time.sleep(0.15)
+        ag.press_key("Tab")
+        ag.press_key("Tab")
     else:
-        # Move to Subject directly (8 Tabs from To field)
         for _ in range(8):
-            run_cmd(["wtype", "-k", "Tab"])
-            time.sleep(0.08)
+            ag.press_key("Tab")
+            time.sleep(0.06)
 
-    # Type Subject
     print(f"Typing subject: {subject}")
-    run_cmd(["wtype", "-d", "20", subject])
-    time.sleep(0.2)
-
-    # Tab to Body
-    run_cmd(["wtype", "-k", "Tab"])
+    ag.type_text(subject, delay=0.005)
     time.sleep(0.15)
 
-    # Type Body
+    ag.press_key("Tab")
+    time.sleep(0.10)
+
     print("Typing body content...")
-    run_cmd(["wtype", "-d", "20", body])
-    time.sleep(0.3)
+    ag.type_text(body, delay=0.004)
+    time.sleep(0.20)
 
-    # From Body, 2 Tabs reaches Send button
-    run_cmd(["wtype", "-k", "Tab"])
-    time.sleep(0.1)
-    run_cmd(["wtype", "-k", "Tab"])
-    time.sleep(0.2)
+    # Try Smart OCR 'Send' click first, fallback to 2 Tabs + Return
+    if not ag.click_text("Send", persistent=False):
+        ag.press_key("Tab")
+        time.sleep(0.08)
+        ag.press_key("Tab")
+        time.sleep(0.12)
+        ag.press_key("Return")
 
-    # Send
-    print("Clicking Send button...")
-    run_cmd(["wtype", "-k", "Return"])
-    time.sleep(2.0)
-
-    # Final verification screenshot
-    final_screen = take_screenshot("/tmp/tuta_sent_result.png")
-    print(f"Email dispatched successfully! Verification screenshot: {final_screen}")
+    ag.wait_for_change(timeout=4.0)
+    final_screen = ag.take_screenshot("/tmp/tuta_sent_result.png")
+    print(f"Email dispatched! Verification screenshot: {final_screen}")
     return True
 
 

@@ -1,0 +1,2258 @@
+#!/usr/bin/env python3
+"""
+Antigravity Intelligent Linux GUI Controller (ag-gui v2.0)
+High-speed, Wayland-native mouse/keyboard, AT-SPI accessibility tree,
+dark-mode-aware OCR, and batch macro engine for Pop!_OS COSMIC Wayland & Xwayland.
+"""
+
+import sys
+import os
+import time
+import argparse
+import subprocess
+import json
+import re
+import shutil
+import atexit
+import warnings
+
+warnings.filterwarnings("ignore")
+
+# ---------------------------------------------------------------------------
+# Environment & lazy module cache
+# ---------------------------------------------------------------------------
+
+_SCREEN_RES_CACHE = None
+_POINTER_SINGLETON = None
+_ATSPI_READY = False
+
+
+def get_desktop_env():
+    """Returns environment dict anchored to the live COSMIC Wayland & user D-Bus session."""
+    env = os.environ.copy()
+    env.setdefault("WAYLAND_DISPLAY", "wayland-1")
+    env.setdefault("DISPLAY", ":1")
+    uid = os.getuid()
+    user_bus = f"/run/user/{uid}/bus"
+    if os.path.exists(user_bus):
+        env["DBUS_SESSION_BUS_ADDRESS"] = f"unix:path={user_bus}"
+    return env
+
+
+def _ensure_atspi():
+    """Lazy-initializes AT-SPI anchored to the real user D-Bus socket."""
+    global _ATSPI_READY
+    if _ATSPI_READY:
+        return True
+    uid = os.getuid()
+    user_bus = f"/run/user/{uid}/bus"
+    if os.path.exists(user_bus):
+        os.environ["DBUS_SESSION_BUS_ADDRESS"] = f"unix:path={user_bus}"
+    try:
+        import gi
+        gi.require_version("Atspi", "2.0")
+        from gi.repository import Atspi  # noqa: F401
+        _ATSPI_READY = True
+        return True
+    except Exception:
+        return False
+
+
+def _get_atspi():
+    if not _ensure_atspi():
+        return None
+    from gi.repository import Atspi
+    return Atspi
+
+
+def _get_pil():
+    from PIL import Image, ImageDraw, ImageChops, ImageStat, ImageOps
+    return Image, ImageDraw, ImageChops, ImageStat, ImageOps
+
+
+def _get_pyautogui():
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            import pyautogui
+        pyautogui.FAILSAFE = False
+        return pyautogui
+    except Exception:
+        return None
+
+
+def _has_bengali(text):
+    return bool(text and re.search(r"[\u0980-\u09FF]", text))
+
+
+def _resolve_ocr_lang(query=None, lang=None):
+    if lang:
+        return lang
+    return "eng+ben" if _has_bengali(query) else "eng"
+
+
+# ---------------------------------------------------------------------------
+# Display & resolution
+# ---------------------------------------------------------------------------
+
+def _strip_ansi(text):
+    return re.sub(r"\x1b\[[0-9;]*m", "", text or "")
+
+
+def get_display_info():
+    """Returns native cosmic-randr display output heads, modes, and scale."""
+    env = get_desktop_env()
+    if os.path.exists("/usr/bin/cosmic-randr"):
+        res = subprocess.run(["cosmic-randr", "list"], capture_output=True, text=True, env=env, check=False)
+        if res.returncode == 0 and res.stdout.strip():
+            return _strip_ansi(res.stdout).strip()
+    return "cosmic-randr not available or returned no display data."
+
+
+def get_screen_resolution(refresh=False):
+    """Returns cached (width, height) of primary physical screen without slow X11 startup."""
+    global _SCREEN_RES_CACHE
+    if _SCREEN_RES_CACHE and not refresh:
+        return _SCREEN_RES_CACHE
+
+    if os.path.exists("/usr/bin/cosmic-randr"):
+        try:
+            res = subprocess.run(
+                ["cosmic-randr", "list"],
+                capture_output=True,
+                text=True,
+                env=get_desktop_env(),
+                timeout=2,
+                check=False,
+            )
+            if res.returncode == 0:
+                clean = _strip_ansi(res.stdout)
+                m = re.search(r"(\d+)x(\d+)\s+@\s+[\d.]+\s+Hz\s+\(current\)", clean)
+                if not m:
+                    m = re.search(r"(\d+)x(\d+)\s+@\s+[\d.]+\s+Hz", clean)
+                if m:
+                    _SCREEN_RES_CACHE = (int(m.group(1)), int(m.group(2)))
+                    return _SCREEN_RES_CACHE
+        except Exception:
+            pass
+
+    pag = _get_pyautogui()
+    if pag:
+        try:
+            w, h = pag.size()
+            _SCREEN_RES_CACHE = (int(w), int(h))
+            return _SCREEN_RES_CACHE
+        except Exception:
+            pass
+
+    _SCREEN_RES_CACHE = (1366, 768)
+    return _SCREEN_RES_CACHE
+
+
+# ---------------------------------------------------------------------------
+# Wayland-native evdev UInput Pointer Manager
+# ---------------------------------------------------------------------------
+
+class _PointerManager:
+    """
+    Manages kernel /dev/uinput virtual absolute tablet + relative wheel devices.
+    Separated into two devices so libinput never confuses ABS coordinates with REL motion.
+    """
+
+    def __init__(self, persistent=True):
+        self.persistent = persistent
+        self._abs_ui = None
+        self._rel_ui = None
+        self._dirty = False
+        self._last_pos = None
+
+    def _ensure_abs(self):
+        if self._abs_ui is not None:
+            return self._abs_ui
+        from evdev import UInput, AbsInfo, ecodes as e
+        w, h = get_screen_resolution()
+        cap = {
+            e.EV_KEY: [e.BTN_LEFT, e.BTN_RIGHT, e.BTN_MIDDLE],
+            e.EV_ABS: [
+                (e.ABS_X, AbsInfo(value=0, min=0, max=max(1, w - 1), fuzz=0, flat=0, resolution=0)),
+                (e.ABS_Y, AbsInfo(value=0, min=0, max=max(1, h - 1), fuzz=0, flat=0, resolution=0)),
+            ],
+        }
+        self._abs_ui = UInput(cap, name="ag-virtual-pointer")
+        # Allow udev/libinput time to attach the virtual device on creation
+        time.sleep(0.35)
+        return self._abs_ui
+
+    def _ensure_rel(self):
+        if self._rel_ui is not None:
+            return self._rel_ui
+        from evdev import UInput, ecodes as e
+        cap = {
+            e.EV_KEY: [e.BTN_LEFT, e.BTN_RIGHT, e.BTN_MIDDLE],
+            e.EV_REL: [e.REL_X, e.REL_Y, e.REL_WHEEL, e.REL_HWHEEL],
+        }
+        self._rel_ui = UInput(cap, name="ag-virtual-wheel")
+        time.sleep(0.18)
+        return self._rel_ui
+
+    def _btn_code(self, button):
+        from evdev import ecodes as e
+        b = (button or "left").lower()
+        if b in ("right", "2"):
+            return e.BTN_RIGHT
+        if b in ("middle", "3"):
+            return e.BTN_MIDDLE
+        return e.BTN_LEFT
+
+    def move_to(self, x, y):
+        from evdev import ecodes as e
+        w, h = get_screen_resolution()
+        cx = max(0, min(w - 1, int(x)))
+        cy = max(0, min(h - 1, int(y)))
+        ui = self._ensure_abs()
+        ui.write(e.EV_ABS, e.ABS_X, cx)
+        ui.write(e.EV_ABS, e.ABS_Y, cy)
+        ui.syn()
+        self._last_pos = (cx, cy)
+        self._dirty = True
+        return True
+
+    def click(self, x, y, button="left", double=False):
+        from evdev import ecodes as e
+        ui = self._ensure_abs()
+        self.move_to(x, y)
+        time.sleep(0.025)
+        btn = self._btn_code(button)
+        clicks = 2 if double else 1
+        for idx in range(clicks):
+            ui.write(e.EV_KEY, btn, 1)
+            ui.syn()
+            time.sleep(0.02)
+            ui.write(e.EV_KEY, btn, 0)
+            ui.syn()
+            if idx + 1 < clicks:
+                time.sleep(0.05)
+        self._dirty = True
+        return True
+
+    def drag(self, start_x, start_y, end_x, end_y, duration=0.4):
+        from evdev import ecodes as e
+        w, h = get_screen_resolution()
+        sx = max(0, min(w - 1, int(start_x)))
+        sy = max(0, min(h - 1, int(start_y)))
+        ex = max(0, min(w - 1, int(end_x)))
+        ey = max(0, min(h - 1, int(end_y)))
+        ui = self._ensure_abs()
+        self.move_to(sx, sy)
+        time.sleep(0.03)
+        ui.write(e.EV_KEY, e.BTN_LEFT, 1)
+        ui.syn()
+        steps = max(10, int(max(0.05, float(duration)) * 50))
+        dt = max(0.005, float(duration) / steps)
+        for i in range(1, steps + 1):
+            t = i / steps
+            ix = int(round(sx + (ex - sx) * t))
+            iy = int(round(sy + (ey - sy) * t))
+            ui.write(e.EV_ABS, e.ABS_X, ix)
+            ui.write(e.EV_ABS, e.ABS_Y, iy)
+            ui.syn()
+            time.sleep(dt)
+        ui.write(e.EV_KEY, e.BTN_LEFT, 0)
+        ui.syn()
+        self._last_pos = (ex, ey)
+        self._dirty = True
+        return True
+
+    def scroll(self, amount, x=None, y=None):
+        from evdev import ecodes as e
+        if x is not None and y is not None:
+            self.move_to(x, y)
+            time.sleep(0.02)
+        ui = self._ensure_rel()
+        amt = int(amount)
+        if amt == 0:
+            return True
+        step = 1 if amt > 0 else -1
+        for _ in range(abs(amt)):
+            ui.write(e.EV_REL, e.REL_WHEEL, step)
+            ui.syn()
+            time.sleep(0.015)
+        self._dirty = True
+        return True
+
+    def close(self):
+        if self._dirty:
+            time.sleep(0.04)
+            self._dirty = False
+        if self._abs_ui is not None:
+            try:
+                self._abs_ui.close()
+            except Exception:
+                pass
+            self._abs_ui = None
+        if self._rel_ui is not None:
+            try:
+                self._rel_ui.close()
+            except Exception:
+                pass
+            self._rel_ui = None
+
+
+def _get_pointer(persistent=True):
+    global _POINTER_SINGLETON
+    if _POINTER_SINGLETON is None:
+        _POINTER_SINGLETON = _PointerManager(persistent=persistent)
+        atexit.register(_POINTER_SINGLETON.close)
+    return _POINTER_SINGLETON
+
+
+# ---------------------------------------------------------------------------
+# Keyboard control (wtype with XKB alias normalization)
+# ---------------------------------------------------------------------------
+
+_MOD_ALIASES = {
+    "ctrl": "ctrl",
+    "control": "ctrl",
+    "lctrl": "ctrl",
+    "rctrl": "ctrl",
+    "shift": "shift",
+    "lshift": "shift",
+    "rshift": "shift",
+    "alt": "alt",
+    "lalt": "alt",
+    "ralt": "alt",
+    "logo": "logo",
+    "win": "logo",
+    "super": "logo",
+    "meta": "logo",
+}
+
+_KEY_ALIASES = {
+    "enter": "Return",
+    "return": "Return",
+    "esc": "Escape",
+    "escape": "Escape",
+    "backspace": "BackSpace",
+    "bksp": "BackSpace",
+    "del": "Delete",
+    "delete": "Delete",
+    "ins": "Insert",
+    "insert": "Insert",
+    "tab": "Tab",
+    "space": "space",
+    "up": "Up",
+    "down": "Down",
+    "left": "Left",
+    "right": "Right",
+    "home": "Home",
+    "end": "End",
+    "pgup": "Page_Up",
+    "pageup": "Page_Up",
+    "page_up": "Page_Up",
+    "pgdn": "Page_Down",
+    "pagedown": "Page_Down",
+    "page_down": "Page_Down",
+    "capslock": "Caps_Lock",
+    "caps_lock": "Caps_Lock",
+    "print": "Print",
+    "prtsc": "Print",
+    "menu": "Menu",
+    "plus": "plus",
+    "minus": "minus",
+    "equal": "equal",
+    "slash": "slash",
+    "backslash": "backslash",
+    "period": "period",
+    "comma": "comma",
+    "semicolon": "semicolon",
+}
+for _fn in range(1, 13):
+    _KEY_ALIASES[f"f{_fn}"] = f"F{_fn}"
+
+
+def normalize_key_name(key_name):
+    k = str(key_name).strip()
+    low = k.lower()
+    if low in _KEY_ALIASES:
+        return _KEY_ALIASES[low]
+    return k
+
+
+def press_key(key_name):
+    """Simulates pressing and releasing a single named key via wtype (Wayland native)."""
+    norm = normalize_key_name(key_name)
+    env = get_desktop_env()
+    if os.path.exists("/usr/bin/wtype"):
+        res = subprocess.run(["wtype", "-k", norm], env=env, capture_output=True, text=True, check=False)
+        if res.returncode == 0:
+            return True
+
+    if os.path.exists("/usr/bin/xdotool"):
+        res = subprocess.run(["xdotool", "key", norm], env=env, capture_output=True, text=True, check=False)
+        if res.returncode == 0:
+            return True
+
+    pag = _get_pyautogui()
+    if pag:
+        try:
+            pag.press(norm.lower())
+            return True
+        except Exception:
+            pass
+
+    return False
+
+
+def hotkey(*keys):
+    """
+    Press key combinations (e.g. 'ctrl', 'n' or 'ctrl+shift+t' or 'enter') via native Wayland wtype.
+    """
+    tokens = []
+    for item in keys:
+        if not item:
+            continue
+        for part in re.split(r"[\s+]+", str(item).strip()):
+            if part:
+                tokens.append(part)
+
+    mods_down = []
+    regular_keys = []
+
+    for tok in tokens:
+        low = tok.lower()
+        if low in _MOD_ALIASES:
+            m = _MOD_ALIASES[low]
+            if m not in mods_down:
+                mods_down.append(m)
+        else:
+            nk = normalize_key_name(tok)
+            if mods_down and len(nk) == 1 and nk.isalpha() and "shift" not in mods_down:
+                nk = nk.lower()
+            regular_keys.append(nk)
+
+    env = get_desktop_env()
+    if os.path.exists("/usr/bin/wtype") and (mods_down or regular_keys):
+        cmd = ["wtype"]
+        for m in mods_down:
+            cmd.extend(["-M", m])
+        for rk in regular_keys:
+            cmd.extend(["-k", rk])
+        for m in reversed(mods_down):
+            cmd.extend(["-m", m])
+        res = subprocess.run(cmd, env=env, capture_output=True, text=True, check=False)
+        if res.returncode == 0:
+            return True
+
+    if os.path.exists("/usr/bin/xdotool"):
+        combo = "+".join(mods_down + regular_keys)
+        res = subprocess.run(["xdotool", "key", combo], env=env, capture_output=True, text=True, check=False)
+        if res.returncode == 0:
+            return True
+
+    pag = _get_pyautogui()
+    if pag:
+        try:
+            pag.hotkey(*(mods_down + [rk.lower() for rk in regular_keys]))
+            return True
+        except Exception:
+            pass
+
+    return False
+
+
+def type_text(text, delay=0.005):
+    """Types text into focused window using Wayland-native wtype (stdin-safe for multiline/special text)."""
+    if text is None or text == "":
+        return True
+    text = str(text)
+    env = get_desktop_env()
+    if os.path.exists("/usr/bin/wtype"):
+        delay_ms = max(0, int(float(delay) * 1000))
+        if "\n" in text or len(text) > 80 or text.startswith("-"):
+            res = subprocess.run(
+                ["wtype", "-d", str(delay_ms), "-"],
+                input=text,
+                env=env,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        else:
+            res = subprocess.run(
+                ["wtype", "-d", str(delay_ms), text],
+                env=env,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        if res.returncode == 0:
+            return True
+
+    if os.path.exists("/usr/bin/ydotool"):
+        delay_ms = max(0, int(float(delay) * 1000))
+        res = subprocess.run(
+            ["ydotool", "type", "--delay", "0", "--key-delay", str(delay_ms), text],
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if res.returncode == 0:
+            return True
+
+    pag = _get_pyautogui()
+    if pag:
+        try:
+            pag.write(text, interval=delay)
+            return True
+        except Exception:
+            pass
+
+    return False
+
+
+# ---------------------------------------------------------------------------
+# Mouse actions (evdev UInput primary -> pyautogui/ydotool fallback)
+# ---------------------------------------------------------------------------
+
+def click(x, y, button="left", double=False, persistent=True):
+    """Click at absolute (x, y) across Wayland & Xwayland via kernel UInput."""
+    try:
+        ptr = _get_pointer(persistent=persistent)
+        ok = ptr.click(x, y, button=button, double=double)
+        if not persistent:
+            ptr.close()
+        if ok:
+            return True
+    except Exception:
+        pass
+
+    pag = _get_pyautogui()
+    if pag:
+        try:
+            pag.moveTo(x, y)
+            time.sleep(0.03)
+            if double:
+                pag.doubleClick(x, y, button=button)
+            else:
+                pag.click(x, y, button=button)
+            return True
+        except Exception:
+            pass
+    return False
+
+
+def drag(start_x, start_y, end_x, end_y, duration=0.4, persistent=True):
+    """Smooth Wayland + Xwayland drag-and-drop between two coordinates via UInput."""
+    try:
+        ptr = _get_pointer(persistent=persistent)
+        ok = ptr.drag(start_x, start_y, end_x, end_y, duration=duration)
+        if not persistent:
+            ptr.close()
+        if ok:
+            return True
+    except Exception:
+        pass
+
+    pag = _get_pyautogui()
+    if pag:
+        try:
+            pag.moveTo(start_x, start_y)
+            time.sleep(0.04)
+            pag.dragTo(end_x, end_y, duration=duration, button="left")
+            return True
+        except Exception:
+            pass
+    return False
+
+
+def scroll(amount, x=None, y=None, persistent=True):
+    """Scroll wheel up (>0) or down (<0) natively across Wayland & Xwayland."""
+    try:
+        ptr = _get_pointer(persistent=persistent)
+        ok = ptr.scroll(amount, x=x, y=y)
+        if not persistent:
+            ptr.close()
+        if ok:
+            return True
+    except Exception:
+        pass
+
+    pag = _get_pyautogui()
+    if pag:
+        try:
+            if x is not None and y is not None:
+                pag.moveTo(x, y)
+            pag.scroll(int(amount))
+            return True
+        except Exception:
+            pass
+    return False
+
+
+# ---------------------------------------------------------------------------
+# AT-SPI Window & UI Element Introspection
+# ---------------------------------------------------------------------------
+
+_DEFAULT_ROLES = {
+    "push button",
+    "toggle button",
+    "menu item",
+    "check box",
+    "radio button",
+    "page tab",
+    "entry",
+    "text",
+    "combo box",
+    "link",
+    "list item",
+    "menu",
+    "spin button",
+    "slider",
+}
+
+
+def find_windows(query=None):
+    """
+    Queries visible Wayland/Xwayland windows via AT-SPI + wmctrl fallback.
+    """
+    screen_w, screen_h = get_screen_resolution()
+    q = query.lower().strip() if query else None
+    matches = []
+    seen_titles = set()
+
+    Atspi = _get_atspi()
+    if Atspi is not None:
+        try:
+            desktop = Atspi.get_desktop(0)
+            if desktop and desktop.get_child_count() > 0:
+                for i in range(desktop.get_child_count()):
+                    app = desktop.get_child_at_index(i)
+                    if not app:
+                        continue
+                    app_name = (app.get_name() or "").strip()
+                    for j in range(app.get_child_count()):
+                        win = app.get_child_at_index(j)
+                        if not win:
+                            continue
+                        win_name = (win.get_name() or "").strip()
+                        try:
+                            comp = win.get_component()
+                            ext = comp.get_extents(Atspi.CoordType.SCREEN)
+                        except Exception:
+                            continue
+
+                        if ext.width <= 0 or ext.height <= 0:
+                            continue
+                        rx = max(0, ext.x)
+                        ry = max(0, ext.y)
+                        rw = min(screen_w, ext.x + ext.width) - rx
+                        rh = min(screen_h, ext.y + ext.height) - ry
+                        if rw <= 0 or rh <= 0:
+                            continue
+
+                        try:
+                            states = win.get_state_set()
+                            is_showing = states.contains(Atspi.StateType.SHOWING)
+                            is_visible = states.contains(Atspi.StateType.VISIBLE)
+                            is_active = states.contains(Atspi.StateType.ACTIVE)
+                        except Exception:
+                            is_showing, is_visible, is_active = True, True, False
+
+                        if not (is_showing or is_visible):
+                            continue
+
+                        w_info = {
+                            "app": app_name,
+                            "title": win_name,
+                            "rect": (rx, ry, rw, rh),
+                            "center": (rx + rw // 2, ry + rh // 2),
+                            "titlebar": (rx + rw // 2, max(45, ry + 15)),
+                            "active": is_active,
+                            "source": "atspi",
+                        }
+                        if not q or q in app_name.lower() or q in win_name.lower():
+                            matches.append(w_info)
+                            seen_titles.add((app_name.lower(), win_name.lower()))
+        except Exception:
+            pass
+
+    # Supplement with wmctrl -l -G -x for Xwayland apps (e.g. Wine / JHora)
+    if os.path.exists("/usr/bin/wmctrl"):
+        try:
+            res = subprocess.run(
+                ["wmctrl", "-l", "-G", "-x"],
+                env=get_desktop_env(),
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            if res.returncode == 0:
+                for line in res.stdout.splitlines():
+                    parts = line.split(None, 7)
+                    if len(parts) < 8:
+                        continue
+                    _, _, x_s, y_s, w_s, h_s, wm_cls, title = parts
+                    try:
+                        rx, ry, rw, rh = int(x_s), int(y_s), int(w_s), int(h_s)
+                    except ValueError:
+                        continue
+                    if rw <= 0 or rh <= 0:
+                        continue
+                    rx = max(0, rx)
+                    ry = max(0, ry)
+                    rw = min(screen_w - rx, rw)
+                    rh = min(screen_h - ry, rh)
+                    if rw <= 0 or rh <= 0:
+                        continue
+                    app_name = wm_cls.split(".")[0]
+                    if (app_name.lower(), title.lower()) in seen_titles:
+                        continue
+                    if not q or q in app_name.lower() or q in title.lower():
+                        matches.append({
+                            "app": app_name,
+                            "title": title.strip(),
+                            "rect": (rx, ry, rw, rh),
+                            "center": (rx + rw // 2, ry + rh // 2),
+                            "titlebar": (rx + rw // 2, ry + 15),
+                            "active": False,
+                            "source": "wmctrl",
+                        })
+        except Exception:
+            pass
+
+    return matches
+
+
+def get_active_window():
+    wins = find_windows()
+    focused = get_focused_window_info()
+    if focused:
+        ft = (focused.get("title") or "").lower().strip()
+        fa = (focused.get("app") or "").lower().strip()
+        for w in wins:
+            wt = (w.get("title") or "").lower().strip()
+            wa = (w.get("app") or "").lower().strip()
+            if (ft and wt == ft) or (wa and wa in fa):
+                return w
+    for w in wins:
+        if w.get("active"):
+            return w
+    return wins[0] if wins else None
+
+
+def find_elements(query=None, window=None, roles=None, max_elements=120):
+    """
+    Walks visible AT-SPI UI widget tree (fast: ~50-250ms, zero OCR) to locate buttons,
+    inputs, menus, tabs, and links with exact screen bounding boxes.
+    """
+    Atspi = _get_atspi()
+    if Atspi is None:
+        return []
+
+    desktop = Atspi.get_desktop(0)
+    if not desktop or desktop.get_child_count() <= 0:
+        return []
+
+    screen_w, screen_h = get_screen_resolution()
+    role_set = set(r.lower() for r in roles) if roles else _DEFAULT_ROLES
+    win_q = window.lower().strip() if window else None
+    q = query.lower().strip() if query else None
+
+    elements = []
+    visited = [0]
+    max_nodes = 1500
+
+    def walk(node, app_name, depth=0):
+        if depth > 12 or visited[0] >= max_nodes or len(elements) >= max_elements * 2:
+            return
+        visited[0] += 1
+        try:
+            role = (node.get_role_name() or "").lower()
+            name = (node.get_name() or "").strip()
+            if not name:
+                try:
+                    name = (node.get_description() or "").strip()
+                except Exception:
+                    name = ""
+
+            if name and role in role_set:
+                try:
+                    states = node.get_state_set()
+                    if states.contains(Atspi.StateType.SHOWING) and states.contains(Atspi.StateType.VISIBLE):
+                        ext = node.get_component().get_extents(Atspi.CoordType.SCREEN)
+                        if ext.width > 0 and ext.height > 0:
+                            cx = ext.x + ext.width // 2
+                            cy = ext.y + ext.height // 2
+                            if 0 <= cx < screen_w and 0 <= cy < screen_h:
+                                score = 0
+                                if q:
+                                    nl = name.lower()
+                                    if nl == q:
+                                        score = 100
+                                    elif nl.startswith(q):
+                                        score = 85
+                                    elif re.search(r"\b" + re.escape(q) + r"\b", nl):
+                                        score = 75
+                                    elif q in nl:
+                                        score = 50
+                                if not q or score > 0:
+                                    elements.append({
+                                        "app": app_name,
+                                        "role": role,
+                                        "name": name,
+                                        "center": [cx, cy],
+                                        "box": [ext.x, ext.y, ext.width, ext.height],
+                                        "score": score if q else 100,
+                                    })
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+        try:
+            count = min(node.get_child_count(), 80)
+            for idx in range(count):
+                if visited[0] >= max_nodes:
+                    break
+                child = node.get_child_at_index(idx)
+                if child is not None:
+                    walk(child, app_name, depth + 1)
+        except Exception:
+            pass
+
+    for i in range(desktop.get_child_count()):
+        app = desktop.get_child_at_index(i)
+        if not app:
+            continue
+        app_name = (app.get_name() or "").strip()
+        child_wins = app.get_child_count()
+        if child_wins == 0:
+            continue
+        matched_app = bool(win_q and win_q in app_name.lower())
+        for j in range(child_wins):
+            win = app.get_child_at_index(j)
+            if not win:
+                continue
+            try:
+                st = win.get_state_set()
+                if not (st.contains(Atspi.StateType.SHOWING) or st.contains(Atspi.StateType.VISIBLE)):
+                    continue
+            except Exception:
+                pass
+            if win_q:
+                win_name = (win.get_name() or "").strip()
+                if not (matched_app or win_q in win_name.lower()):
+                    continue
+            walk(win, app_name, 0)
+
+    if q:
+        elements.sort(key=lambda el: (-el["score"], len(el["name"])))
+    return elements[:max_elements]
+
+
+def _list_x11_windows():
+    """Fast (~5ms) Xwayland window list via wmctrl -l -x."""
+    if not os.path.exists("/usr/bin/wmctrl"):
+        return []
+    res = subprocess.run(
+        ["wmctrl", "-l", "-x"],
+        env=get_desktop_env(),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if res.returncode != 0:
+        return []
+    return [line.strip() for line in res.stdout.splitlines() if line.strip()]
+
+
+def get_focused_window_info():
+    """
+    Detects currently focused window across Xwayland (xdotool) and Wayland (AT-SPI).
+    Returns {"title": ..., "app": ..., "source": ...} or None if unknown.
+    """
+    env = get_desktop_env()
+    if os.path.exists("/usr/bin/xdotool"):
+        try:
+            wid_res = subprocess.run(
+                ["xdotool", "getactivewindow"],
+                env=env,
+                capture_output=True,
+                text=True,
+                timeout=1,
+                check=False,
+            )
+            if wid_res.returncode == 0 and wid_res.stdout.strip():
+                wid = wid_res.stdout.strip()
+                name_res = subprocess.run(
+                    ["xdotool", "getwindowname", wid],
+                    env=env,
+                    capture_output=True,
+                    text=True,
+                    timeout=1,
+                    check=False,
+                )
+                cls_res = subprocess.run(
+                    ["xprop", "-id", wid, "WM_CLASS"],
+                    env=env,
+                    capture_output=True,
+                    text=True,
+                    timeout=1,
+                    check=False,
+                )
+                return {
+                    "title": name_res.stdout.strip(),
+                    "app": cls_res.stdout.strip(),
+                    "source": "x11",
+                }
+        except Exception:
+            pass
+
+    Atspi = _get_atspi()
+    if Atspi is not None:
+        try:
+            d = Atspi.get_desktop(0)
+            for i in range(d.get_child_count()):
+                app = d.get_child_at_index(i)
+                if not app:
+                    continue
+                app_name = (app.get_name() or "").strip()
+                for j in range(app.get_child_count()):
+                    win = app.get_child_at_index(j)
+                    if not win:
+                        continue
+                    try:
+                        if win.get_state_set().contains(Atspi.StateType.ACTIVE):
+                            return {
+                                "title": (win.get_name() or "").strip(),
+                                "app": app_name,
+                                "source": "atspi",
+                            }
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+    return None
+
+
+def is_window_focused(expected_query):
+    """
+    Focus Guard: checks whether expected_query matches the currently focused window
+    (or its X11 WM_CLASS, so child dialogs like 'Enter Birthdata' pass when guarding 'jhora').
+    """
+    if not expected_query:
+        return True
+    q = expected_query.lower().strip()
+    info = get_focused_window_info()
+    if info is not None:
+        haystack = f"{info.get('app', '')} {info.get('title', '')}".lower()
+        return q in haystack
+    # If expected window is an X11 window but xdotool reported no active X11 window,
+    # a native Wayland window (e.g., IDE/browser) stole focus -> unsafe to type!
+    for line in _list_x11_windows():
+        if q in line.lower():
+            return False
+    return True
+
+
+def maximize_window(title_or_query=None, fullscreen=False, persistent=True):
+    """
+    Idempotently maximizes (or fullscreens) target/active window across Xwayland and COSMIC Wayland.
+    Checks current window bounds first so COSMIC Super+m never accidentally un-maximizes.
+    """
+    env = get_desktop_env()
+    if title_or_query:
+        focus_window(title_or_query, persistent=persistent)
+
+    screen_w, screen_h = get_screen_resolution()
+    active_win = None if title_or_query else get_active_window()
+    wins = find_windows(title_or_query) if title_or_query else ([active_win] if active_win else [])
+    if wins and wins[0]:
+        _, _, rw, rh = wins[0]["rect"]
+        if not fullscreen and rw >= int(screen_w * 0.92) and rh >= int(screen_h * 0.90):
+            return True
+
+    target_query = title_or_query or (active_win["title"] if active_win else None)
+
+    # Layer 1: idempotent wmctrl for Xwayland apps (e.g. JHora / Wine)
+    if target_query and os.path.exists("/usr/bin/wmctrl"):
+        x_wins = [w for w in _list_x11_windows() if target_query.lower() in w.lower()]
+        if x_wins:
+            flag = "add,fullscreen" if fullscreen else "add,maximized_vert,maximized_horz"
+            res = subprocess.run(
+                ["wmctrl", "-r", target_query.strip(), "-b", flag],
+                env=env,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            if res.returncode == 0:
+                time.sleep(0.15)
+                return True
+
+    # Layer 2: COSMIC native Wayland shortcut (Super+m for Maximize, Super+F11 for Fullscreen)
+    ok = hotkey("logo", "F11" if fullscreen else "m")
+    time.sleep(0.15)
+    return ok
+
+
+def focus_window(title_or_query, persistent=True, maximize=False):
+    """
+    3-Layer Hybrid Focus (+ optional auto-maximize):
+    1. wmctrl for X11 / Xwayland windows (e.g. JHora)
+    2. AT-SPI window search + UInput titlebar center click for native Wayland windows
+    3. gtk-launch fallback
+    """
+    q = title_or_query.strip()
+    env = get_desktop_env()
+    focused = False
+
+    if os.path.exists("/usr/bin/wmctrl"):
+        res = subprocess.run(["wmctrl", "-a", q], env=env, capture_output=True, text=True, check=False)
+        if res.returncode == 0 and not res.stderr.strip():
+            time.sleep(0.08)
+            focused = True
+
+    if not focused:
+        wins = find_windows(q)
+        if wins:
+            target = wins[0]
+            tx, ty = target["titlebar"]
+            if click(tx, ty, button="left", persistent=persistent):
+                time.sleep(0.12)
+                focused = True
+
+    if not focused:
+        desktop_id = q.lower().replace(" ", "-")
+        res = subprocess.run(
+            ["gtk-launch", desktop_id],
+            env=env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
+        if res.returncode == 0:
+            time.sleep(0.25)
+            focused = True
+
+    if focused and maximize:
+        maximize_window(q, persistent=persistent)
+
+    return focused
+
+
+# ---------------------------------------------------------------------------
+# Fast Wayland Screenshots (zero /tmp leak)
+# ---------------------------------------------------------------------------
+
+def take_screenshot(save_path="/tmp/ag_screen.png"):
+    """
+    Captures Wayland desktop via cosmic-screenshot (~77ms) and moves file cleanly to save_path
+    without leaving Timestamped Screenshot_*.png clutter in /tmp.
+    """
+    env = get_desktop_env()
+    if os.path.exists("/usr/bin/cosmic-screenshot"):
+        res = subprocess.run(
+            ["cosmic-screenshot", "--interactive=false", "--notify=false", "-s", "/tmp"],
+            capture_output=True,
+            text=True,
+            env=env,
+            check=False,
+        )
+        out_file = res.stdout.strip()
+        if out_file and os.path.exists(out_file):
+            if os.path.abspath(out_file) != os.path.abspath(save_path):
+                shutil.move(out_file, save_path)
+            return save_path
+
+    pag = _get_pyautogui()
+    if pag:
+        im = pag.screenshot()
+        im.save(save_path)
+        return save_path
+
+    raise RuntimeError("Could not capture screenshot via cosmic-screenshot or pyautogui.")
+
+
+def screenshot_window(title_or_query=None, save_path="/tmp/ag_window.png"):
+    """Captures screenshot cropped strictly to target window (or active window)."""
+    Image, _, _, _, _ = _get_pil()
+    win = None
+    if title_or_query:
+        wins = find_windows(title_or_query)
+        if wins:
+            win = wins[0]
+    else:
+        win = get_active_window()
+
+    temp_full = "/tmp/ag_full_temp.png"
+    full_shot = take_screenshot(temp_full)
+    full_img = Image.open(full_shot)
+    full_img.load()
+    if os.path.exists(temp_full) and os.path.abspath(temp_full) != os.path.abspath(save_path):
+        try:
+            os.remove(temp_full)
+        except Exception:
+            pass
+
+    if win and "rect" in win:
+        rx, ry, rw, rh = win["rect"]
+        x1 = max(0, rx)
+        y1 = max(0, ry)
+        x2 = min(full_img.width, rx + rw)
+        y2 = min(full_img.height, ry + rh)
+        if x2 > x1 and y2 > y1:
+            crop_img = full_img.crop((x1, y1, x2, y2))
+            crop_img.save(save_path)
+            return save_path, win
+
+    full_img.save(save_path)
+    return save_path, {"app": "Desktop", "title": "Full Desktop", "rect": (0, 0, full_img.width, full_img.height)}
+
+
+# ---------------------------------------------------------------------------
+# High-speed dark-mode-aware OCR & Smart Ranking
+# ---------------------------------------------------------------------------
+
+def _prepare_ocr_image(img):
+    """
+    Converts UI screenshot to high-contrast dark-on-light grayscale for faster,
+    much more accurate Tesseract OCR on dark themes.
+    """
+    _, _, _, ImageStat, ImageOps = _get_pil()
+    gray = img.convert("L")
+    mean_luma = ImageStat.Stat(gray).mean[0]
+    if mean_luma < 115:
+        gray = ImageOps.invert(gray)
+    gray = ImageOps.autocontrast(gray, cutoff=1)
+    return gray
+
+
+def _run_tesseract_data(img, lang="eng"):
+    import pytesseract
+    prev_omp = os.environ.get("OMP_THREAD_LIMIT")
+    os.environ["OMP_THREAD_LIMIT"] = "1" if "ben" in lang else "2"
+    try:
+        proc = _prepare_ocr_image(img)
+        return pytesseract.image_to_data(
+            proc,
+            lang=lang,
+            config="--psm 11",
+            output_type=pytesseract.Output.DICT,
+        )
+    finally:
+        if prev_omp is None:
+            os.environ.pop("OMP_THREAD_LIMIT", None)
+        else:
+            os.environ["OMP_THREAD_LIMIT"] = prev_omp
+
+
+def _extract_ocr_words_and_lines(data, min_conf=20):
+    words = []
+    lines_map = {}
+    n = len(data.get("text", []))
+    for i in range(n):
+        t = data["text"][i].strip()
+        if not t:
+            continue
+        try:
+            conf = int(float(data["conf"][i]))
+        except Exception:
+            conf = 0
+        if conf < min_conf:
+            continue
+        item = {
+            "text": t,
+            "x": data["left"][i],
+            "y": data["top"][i],
+            "w": data["width"][i],
+            "h": data["height"][i],
+            "conf": conf,
+            "line_key": (
+                data.get("block_num", [0])[i],
+                data.get("par_num", [0])[i],
+                data.get("line_num", [0])[i],
+            ),
+        }
+        words.append(item)
+        lines_map.setdefault(item["line_key"], []).append(item)
+
+    # Group contiguous words on same line into clean UI phrases
+    grouped_lines = []
+    for _, line_words in lines_map.items():
+        line_words.sort(key=lambda w: w["x"])
+        cur = [line_words[0]]
+        for w in line_words[1:]:
+            prev = cur[-1]
+            gap = w["x"] - (prev["x"] + prev["w"])
+            max_gap = max(18, int(max(prev["h"], w["h"]) * 1.6))
+            if gap <= max_gap:
+                cur.append(w)
+            else:
+                grouped_lines.append(_merge_word_group(cur))
+                cur = [w]
+        grouped_lines.append(_merge_word_group(cur))
+
+    return words, grouped_lines
+
+
+def _merge_word_group(group):
+    x1 = min(w["x"] for w in group)
+    y1 = min(w["y"] for w in group)
+    x2 = max(w["x"] + w["w"] for w in group)
+    y2 = max(w["y"] + w["h"] for w in group)
+    avg_conf = sum(w["conf"] for w in group) // len(group)
+    return {
+        "text": " ".join(w["text"] for w in group),
+        "center": [x1 + (x2 - x1) // 2, y1 + (y2 - y1) // 2],
+        "box": [x1, y1, x2 - x1, y2 - y1],
+        "conf": avg_conf,
+    }
+
+
+def find_text_on_screen(query, screenshot_path=None, lang=None):
+    """
+    Fast dark-mode-aware Tesseract OCR with exact-phrase, whole-word,
+    sliding-window, and ranked substring matching.
+    """
+    Image, _, _, _, _ = _get_pil()
+    path = screenshot_path or take_screenshot()
+    img = Image.open(path)
+    resolved_lang = _resolve_ocr_lang(query=query, lang=lang)
+    data = _run_tesseract_data(img, lang=resolved_lang)
+
+    q = query.lower().strip()
+    q_words = q.split()
+    if not q_words:
+        return []
+
+    words, grouped_lines = _extract_ocr_words_and_lines(data, min_conf=20)
+    matches = []
+    seen_coords = set()
+
+    def add_match(text, x1, y1, x2, y2, conf, score):
+        cx = x1 + (x2 - x1) // 2
+        cy = y1 + (y2 - y1) // 2
+        key = (cx // 6, cy // 6)
+        if key in seen_coords:
+            return
+        seen_coords.add(key)
+        matches.append({
+            "text": text,
+            "center_x": cx,
+            "center_y": cy,
+            "x": x1,
+            "y": y1,
+            "w": x2 - x1,
+            "h": y2 - y1,
+            "conf": conf,
+            "score": score,
+        })
+
+    # 1. Exact full match on grouped UI labels
+    for gl in grouped_lines:
+        gl_low = gl["text"].lower()
+        bx, by, bw, bh = gl["box"]
+        if gl_low == q:
+            add_match(gl["text"], bx, by, bx + bw, by + bh, gl["conf"], 100)
+
+    # 2. Tight bounding-box sliding-window match across OCR tokens
+    k_len = len(q_words)
+    for i in range(len(words) - k_len + 1):
+        sub = words[i:i + k_len]
+        joined = " ".join(w["text"].lower() for w in sub)
+        exact_seq = (joined == q)
+        whole_words = exact_seq or all(
+            re.search(r"\b" + re.escape(q_words[k]) + r"\b", sub[k]["text"].lower())
+            for k in range(k_len)
+        )
+        token_match = whole_words or all(q_words[k] in sub[k]["text"].lower() for k in range(k_len))
+        if token_match:
+            x1 = min(w["x"] for w in sub)
+            y1 = min(w["y"] for w in sub)
+            x2 = max(w["x"] + w["w"] for w in sub)
+            y2 = max(w["y"] + w["h"] for w in sub)
+            avg_conf = sum(w["conf"] for w in sub) // k_len
+            score = 95 if exact_seq else (88 if whole_words else (80 if k_len > 1 else 70))
+            add_match(" ".join(w["text"] for w in sub), x1, y1, x2, y2, avg_conf, score)
+
+    # 3. Substring fallback
+    if not matches:
+        for w in words:
+            wl = w["text"].lower()
+            if q in wl:
+                score = 80 if wl == q else 50
+                add_match(w["text"], w["x"], w["y"], w["x"] + w["w"], w["y"] + w["h"], w["conf"], score)
+
+    matches.sort(key=lambda m: (-m["score"], -m["conf"]))
+    return matches
+
+
+def click_verify(x, y, button="left", double=False, crop_size=100, persistent=True):
+    """Dispatches click with fast closed-loop visual delta verification."""
+    Image, _, ImageChops, ImageStat, _ = _get_pil()
+    shot_pre = take_screenshot("/tmp/ag_verify_pre.png")
+    im_pre = Image.open(shot_pre)
+    half = crop_size // 2
+    box = (max(0, x - half), max(0, y - half), min(im_pre.width, x + half), min(im_pre.height, y + half))
+    crop_pre = im_pre.crop(box)
+
+    ok = click(x, y, button=button, double=double, persistent=persistent)
+    time.sleep(0.15)
+
+    shot_post = take_screenshot("/tmp/ag_verify_post.png")
+    im_post = Image.open(shot_post)
+    crop_post = im_post.crop(box)
+
+    diff = ImageChops.difference(crop_pre, crop_post)
+    stat = ImageStat.Stat(diff)
+    delta_ratio = sum(stat.mean) / (255.0 * 3.0)
+    delta_percent = round(delta_ratio * 100.0, 3)
+
+    return {
+        "success": ok,
+        "x": x,
+        "y": y,
+        "button": button,
+        "delta_percent": delta_percent,
+        "state_changed": delta_ratio > 0.0005,
+    }
+
+
+def click_text(query, screenshot_path=None, window=None, double=False, right=False, lang=None, persistent=True):
+    """Locates text visually on screen/window and clicks its center point."""
+    offset_x, offset_y = 0, 0
+    shot = screenshot_path
+
+    if window:
+        focus_window(window, persistent=persistent)
+        shot, win_info = screenshot_window(window)
+        if win_info and "rect" in win_info:
+            offset_x, offset_y = win_info["rect"][0], win_info["rect"][1]
+
+    matches = find_text_on_screen(query, screenshot_path=shot, lang=lang)
+    if not matches:
+        print(f"Text '{query}' not found on screen.", file=sys.stderr)
+        return False
+
+    best = matches[0]
+    target_x = offset_x + best["center_x"]
+    target_y = offset_y + best["center_y"]
+    btn = "right" if right else "left"
+
+    print(f"Found '{best['text']}' (score={best['score']}, conf={best['conf']}) at ({target_x}, {target_y}). Clicking...")
+    return click(target_x, target_y, button=btn, double=double, persistent=persistent)
+
+
+def click_element(query, window=None, button="left", double=False, ocr_fallback=True, persistent=True):
+    """
+    Clicks UI element via AT-SPI accessibility tree first (~50-250ms, zero OCR),
+    with automatic fallback to fast Smart OCR if AT-SPI exposes no match.
+    """
+    if window:
+        focus_window(window, persistent=persistent)
+
+    els = find_elements(query=query, window=window, max_elements=10)
+    if els:
+        best = els[0]
+        cx, cy = best["center"]
+        ok = click(cx, cy, button=button, double=double, persistent=persistent)
+        if ok:
+            print(f"AT-SPI clicked '{best['name']}' ({best['role']}) at ({cx}, {cy}).")
+            return True
+
+    if ocr_fallback:
+        return click_text(
+            query,
+            window=window,
+            double=double,
+            right=(button == "right"),
+            persistent=persistent,
+        )
+    return False
+
+
+def replace_text(text, x=None, y=None, select_width=90, delay=0.015, clear_mode="auto", persistent=True):
+    """
+    Universal field replacement that works across BOTH modern GTK/Electron (Ctrl+A)
+    and legacy Win32/Wine CEdit controls (drag-select + BackSpace).
+    """
+    if x is not None and y is not None:
+        half = max(15, int(select_width) // 2)
+        drag(int(x) + half, int(y), max(0, int(x) - half), int(y), duration=0.15, persistent=persistent)
+        time.sleep(0.05)
+        press_key("BackSpace")
+        time.sleep(0.04)
+        return type_text(text, delay=delay)
+
+    mode = (clear_mode or "auto").lower().strip()
+    if mode == "auto":
+        info = get_focused_window_info()
+        app_str = (info.get("app", "") if info else "").lower()
+        if info and info.get("source") == "x11" and ("wine" in app_str or ".exe" in app_str):
+            mode = "win32"
+
+    if mode == "win32":
+        press_key("Home")
+        hotkey("shift", "end")
+    else:
+        hotkey("ctrl", "a")
+    time.sleep(0.03)
+    press_key("BackSpace")
+    time.sleep(0.04)
+    return type_text(text, delay=delay)
+
+
+# ---------------------------------------------------------------------------
+# Visual Grid, Set-of-Mark (SoM), & Window Inspection
+# ---------------------------------------------------------------------------
+
+def overlay_grid(image_path, output_path="/tmp/ag_grid.png", step=80):
+    """Overlays compact alphanumeric grid (A1..Z10) on image (~23 KB)."""
+    Image, ImageDraw, _, _, _ = _get_pil()
+    if not os.path.exists(image_path):
+        raise FileNotFoundError(f"Image '{image_path}' not found.")
+
+    base = Image.open(image_path).convert("RGBA")
+    w, h = base.size
+    overlay = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(overlay)
+    cols = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+    col_idx = 0
+    for x in range(0, w, step):
+        draw.line([(x, 0), (x, h)], fill=(0, 240, 255, 90), width=1)
+        col_idx += 1
+
+    for y in range(0, h, step):
+        draw.line([(0, y), (w, y)], fill=(0, 240, 255, 90), width=1)
+
+    col_idx = 0
+    for x in range(0, w, step):
+        c_label = cols[col_idx % len(cols)]
+        row_idx = 1
+        for y in range(0, h, step):
+            label = f"{c_label}{row_idx}"
+            draw.rectangle([(x + 2, y + 2), (x + 24, y + 14)], fill=(0, 0, 0, 160))
+            draw.text((x + 4, y + 2), label, fill=(0, 255, 200, 255))
+            row_idx += 1
+        col_idx += 1
+
+    combined = Image.alpha_composite(base, overlay).convert("RGB")
+    quantized = combined.quantize(colors=128)
+    quantized.save(output_path, "PNG", optimize=True)
+    return output_path
+
+
+def inspect_window(title_or_query=None, save_path="/tmp/ag_inspect_crop.png", lang="eng", persistent=True):
+    """
+    Focuses window, extracts AT-SPI interactive widgets + grouped OCR UI labels,
+    and returns compact structured JSON.
+    """
+    Image, _, _, _, _ = _get_pil()
+    if title_or_query:
+        focus_window(title_or_query, persistent=persistent)
+
+    crop_path, win_info = screenshot_window(title_or_query, save_path=save_path)
+    img = Image.open(crop_path)
+
+    atspi_els = find_elements(window=title_or_query, max_elements=80)
+    data = _run_tesseract_data(img, lang=lang)
+    _, grouped_lines = _extract_ocr_words_and_lines(data, min_conf=25)
+
+    return {
+        "app": win_info.get("app", "Unknown"),
+        "title": win_info.get("title", "Unknown"),
+        "rect": list(win_info.get("rect", [0, 0, img.width, img.height])),
+        "screenshot": crop_path,
+        "atspi_elements": atspi_els,
+        "text_elements": grouped_lines,
+    }
+
+
+def som_inspect(
+    title_or_query=None,
+    output_path="/tmp/ag_som.png",
+    map_path="/tmp/ag_som_map.json",
+    lang="eng",
+    persistent=True,
+):
+    """
+    Set-of-Mark (SoM) visual tagger: merges AT-SPI widgets and grouped OCR labels,
+    draws numbered badges [1], [2], ... onto the image, and caches exact screen
+    coordinates to map_path so click_mark(id) clicks with zero eyeballing.
+    """
+    Image, ImageDraw, _, _, _ = _get_pil()
+    info = inspect_window(title_or_query, save_path="/tmp/ag_som_raw.png", lang=lang, persistent=persistent)
+    rx, ry = info["rect"][0], info["rect"][1]
+
+    marks = []
+    seen = []
+
+    def _near(ax, ay):
+        for sx, sy in seen:
+            if abs(ax - sx) <= 18 and abs(ay - sy) <= 14:
+                return True
+        return False
+
+    for el in info.get("atspi_elements", []):
+        cx, cy = el["center"]
+        if not _near(cx, cy):
+            seen.append((cx, cy))
+            marks.append({
+                "id": len(marks) + 1,
+                "text": el["name"],
+                "role": el["role"],
+                "center": [cx, cy],
+                "local_center": [cx - rx, cy - ry],
+                "source": "atspi",
+            })
+
+    for el in info.get("text_elements", []):
+        lx, ly = el["center"]
+        ax, ay = rx + lx, ry + ly
+        if not _near(ax, ay):
+            seen.append((ax, ay))
+            marks.append({
+                "id": len(marks) + 1,
+                "text": el["text"],
+                "role": "ocr_label",
+                "center": [ax, ay],
+                "local_center": [lx, ly],
+                "source": "ocr",
+            })
+
+    base = Image.open(info["screenshot"]).convert("RGBA")
+    overlay = Image.new("RGBA", base.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(overlay)
+
+    placed_boxes = []
+
+    def _overlaps(b1, b2):
+        return not (b1[2] <= b2[0] or b1[0] >= b2[2] or b1[3] <= b2[1] or b1[1] >= b2[3])
+
+    for m in marks:
+        lx, ly = m["local_center"]
+        tag = f"[{m['id']}]"
+        bw = 6 + len(tag) * 6
+        bh = 12
+        candidates = [
+            (lx - 10, ly - 15),
+            (lx + 4, ly - 15),
+            (lx - 10, ly + 4),
+            (lx + 4, ly + 4),
+            (lx - bw - 4, ly - 6),
+            (lx + 6, ly - 6),
+        ]
+        chosen = None
+        for cx0, cy0 in candidates:
+            tx = max(2, min(base.width - bw - 2, cx0))
+            ty = max(2, min(base.height - bh - 2, cy0))
+            box = (tx, ty, tx + bw, ty + bh)
+            if not any(_overlaps(box, pb) for pb in placed_boxes):
+                chosen = box
+                break
+        if chosen is None:
+            tx = max(2, min(base.width - bw - 2, lx - 10))
+            ty = max(2, min(base.height - bh - 2, ly - 14))
+            chosen = (tx, ty, tx + bw, ty + bh)
+        placed_boxes.append(chosen)
+        tx, ty, tx2, ty2 = chosen
+        draw.rectangle([(tx, ty), (tx2, ty2)], fill=(220, 38, 38, 225))
+        draw.text((tx + 2, ty + 1), tag, fill=(255, 255, 255, 255))
+        draw.ellipse([(lx - 2, ly - 2), (lx + 2, ly + 2)], fill=(255, 255, 0, 255), outline=(0, 0, 0, 255))
+
+    combined = Image.alpha_composite(base, overlay).convert("RGB")
+    combined.quantize(colors=128).save(output_path, "PNG", optimize=True)
+
+    with open(map_path, "w", encoding="utf-8") as fp:
+        json.dump(marks, fp, indent=2, ensure_ascii=False)
+
+    return {
+        "app": info["app"],
+        "title": info["title"],
+        "rect": info["rect"],
+        "som_image": output_path,
+        "map_path": map_path,
+        "count": len(marks),
+        "marks": [{"id": m["id"], "text": m["text"], "center": m["center"], "source": m["source"]} for m in marks],
+    }
+
+
+def click_mark(mark_id, map_path="/tmp/ag_som_map.json", button="left", double=False, persistent=True):
+    """Clicks a Set-of-Mark ID cached by som_inspect()."""
+    if not os.path.exists(map_path):
+        raise FileNotFoundError(f"SoM map '{map_path}' not found. Run som-inspect first.")
+    with open(map_path, "r", encoding="utf-8") as fp:
+        marks = json.load(fp)
+    mid = int(mark_id)
+    for m in marks:
+        if int(m["id"]) == mid:
+            cx, cy = m["center"]
+            ok = click(cx, cy, button=button, double=double, persistent=persistent)
+            print(f"SoM clicked [{mid}] '{m['text']}' at ({cx}, {cy}).")
+            return ok
+    print(f"Mark ID [{mid}] not found in {map_path}.", file=sys.stderr)
+    return False
+
+
+# ---------------------------------------------------------------------------
+# OpenCV Multi-Scale Icon Matching
+# ---------------------------------------------------------------------------
+
+def find_icon(template_path, window=None, threshold=0.82, scales=(0.9, 1.0, 1.1)):
+    """
+    Finds an icon template on the screen (or inside a target window) using OpenCV
+    multi-scale normalized cross-correlation (TM_CCOEFF_NORMED).
+    Returns {"center_x", "center_y", "x", "y", "w", "h", "score", "scale"} or None.
+    """
+    if not os.path.exists(template_path):
+        raise FileNotFoundError(f"Icon template '{template_path}' not found.")
+
+    import cv2
+
+    if window:
+        img_path, win_info = screenshot_window(window, save_path="/tmp/ag_icon_search.png")
+        rx, ry = win_info["rect"][0], win_info["rect"][1]
+    else:
+        img_path = take_screenshot("/tmp/ag_icon_search.png")
+        rx, ry = 0, 0
+
+    screen_gray = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+    tmpl_gray = cv2.imread(template_path, cv2.IMREAD_GRAYSCALE)
+    if screen_gray is None or tmpl_gray is None:
+        return None
+
+    sh, sw = screen_gray.shape[:2]
+    th, tw = tmpl_gray.shape[:2]
+    best = None
+
+    for scale in scales:
+        nw = max(4, int(round(tw * scale)))
+        nh = max(4, int(round(th * scale)))
+        if nw > sw or nh > sh:
+            continue
+        resized = tmpl_gray if scale == 1.0 else cv2.resize(tmpl_gray, (nw, nh), interpolation=cv2.INTER_AREA)
+        res = cv2.matchTemplate(screen_gray, resized, cv2.TM_CCOEFF_NORMED)
+        _, max_val, _, max_loc = cv2.minMaxLoc(res)
+        if max_val >= threshold and (best is None or max_val > best["score"]):
+            bx, by = int(max_loc[0]), int(max_loc[1])
+            best = {
+                "x": rx + bx,
+                "y": ry + by,
+                "w": nw,
+                "h": nh,
+                "center_x": rx + bx + nw // 2,
+                "center_y": ry + by + nh // 2,
+                "score": round(float(max_val), 4),
+                "scale": scale,
+            }
+    return best
+
+
+def click_icon(template_path, window=None, threshold=0.82, button="left", double=False, persistent=True):
+    """Locates an icon via OpenCV template matching and clicks its center."""
+    if window:
+        focus_window(window, persistent=persistent)
+    match = find_icon(template_path, window=window, threshold=threshold)
+    if not match:
+        print(f"Icon '{template_path}' not found above threshold {threshold}.", file=sys.stderr)
+        return False
+    ok = click(match["center_x"], match["center_y"], button=button, double=double, persistent=persistent)
+    print(f"Clicked icon '{os.path.basename(template_path)}' at ({match['center_x']}, {match['center_y']}) score={match['score']}.")
+    return ok
+
+
+# ---------------------------------------------------------------------------
+# Smart Pixel-Diff-First Waits
+# ---------------------------------------------------------------------------
+
+def wait_for_change(timeout=5.0, interval=0.25, window=None, threshold=0.002):
+    """Waits deterministically until visible screen/window pixels change."""
+    Image, _, ImageChops, ImageStat, _ = _get_pil()
+    start = time.time()
+
+    def snap():
+        if window:
+            p, _ = screenshot_window(window, save_path="/tmp/ag_wchg.png")
+        else:
+            p = take_screenshot("/tmp/ag_wchg.png")
+        im = Image.open(p).convert("RGB")
+        im.load()
+        return im
+
+    base = snap()
+    while time.time() - start < timeout:
+        time.sleep(interval)
+        cur = snap()
+        if cur.size != base.size:
+            return True, time.time() - start
+        diff = ImageChops.difference(base, cur)
+        ratio = sum(ImageStat.Stat(diff).mean) / (255.0 * 3.0)
+        if ratio >= threshold:
+            return True, time.time() - start
+    return False, time.time() - start
+
+
+def wait_for_text(query, timeout=10.0, interval=0.35, window=None, lang=None):
+    """
+    Polls screen/window until target text appears, using fast pixel-diff gating
+    so expensive OCR only re-runs when the frame actually changed.
+    """
+    Image, _, ImageChops, ImageStat, _ = _get_pil()
+    start = time.time()
+    prev_im = None
+    first = True
+
+    while time.time() - start < timeout:
+        if window:
+            shot, _ = screenshot_window(window, save_path="/tmp/ag_wait_crop.png")
+        else:
+            shot = take_screenshot("/tmp/ag_wait_crop.png")
+
+        cur_im = Image.open(shot).convert("RGB")
+        cur_im.load()
+
+        changed = first or prev_im is None or cur_im.size != prev_im.size
+        if not changed:
+            diff = ImageChops.difference(prev_im, cur_im)
+            ratio = sum(ImageStat.Stat(diff).mean) / (255.0 * 3.0)
+            changed = ratio > 0.0005
+
+        if changed:
+            first = False
+            prev_im = cur_im
+            if find_text_on_screen(query, screenshot_path=shot, lang=lang):
+                return True, time.time() - start
+
+        time.sleep(interval)
+
+    return False, time.time() - start
+
+
+# ---------------------------------------------------------------------------
+# Clipboard & Batch Execution
+# ---------------------------------------------------------------------------
+
+def copy_image_to_clipboard(image_path):
+    """Stages an image to Wayland clipboard using wl-copy with isolated pipes (zero-hang)."""
+    if not os.path.exists(image_path):
+        return False, f"File '{image_path}' not found."
+
+    with open(image_path, "rb") as f:
+        res = subprocess.run(
+            ["wl-copy", "-t", "image/png"],
+            stdin=f,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            close_fds=True,
+            env=get_desktop_env(),
+            timeout=3,
+        )
+    if res.returncode == 0:
+        return True, "Image copied to Wayland clipboard as image/png."
+    return False, f"wl-copy failed with return code {res.returncode}"
+
+
+def run_batch(steps, persistent=True, guard_window=None, stop_on_popup=False):
+    """
+    Executes a list of GUI actions sequentially in-process with zero LLM round-trip lag.
+    Supported actions: focus, maximize, click, click_text, click_element, click_mark,
+    replace_text, drag, scroll, type, key, hotkey, wait, wait_text, wait_change,
+    screenshot, copy_image.
+    Includes Focus Guard (guard_window) and X11 Popup Detector (stop_on_popup).
+    """
+    t_total = time.time()
+    results = []
+    base_x11 = set(_list_x11_windows()) if stop_on_popup else set()
+    base_atspi = {(w.get("app", ""), w.get("title", "")) for w in find_windows()} if stop_on_popup else set()
+
+    for idx, step in enumerate(steps):
+        t0 = time.time()
+        act = (step.get("action") or step.get("cmd") or "").lower().strip()
+        ok = False
+        detail = None
+        step_guard = step.get("guard_window", guard_window)
+
+        try:
+            if act in ("type", "key", "hotkey", "replace_text", "click", "click_mark", "drag", "scroll") and step_guard:
+                if not is_window_focused(step_guard):
+                    cur = get_focused_window_info()
+                    detail = f"FocusGuard aborted: expected '{step_guard}', active={cur}"
+                    results.append({
+                        "step": idx,
+                        "action": act,
+                        "ok": False,
+                        "ms": round((time.time() - t0) * 1000.0, 1),
+                        "detail": detail,
+                    })
+                    return {
+                        "success": False,
+                        "failed_step": idx,
+                        "focus_lost": True,
+                        "total_ms": round((time.time() - t_total) * 1000.0, 1),
+                        "steps": results,
+                    }
+
+            if act == "focus":
+                ok = focus_window(
+                    step["window"],
+                    persistent=persistent,
+                    maximize=bool(step.get("maximize", False)),
+                )
+            elif act == "maximize":
+                ok = maximize_window(
+                    step.get("window"),
+                    fullscreen=bool(step.get("fullscreen", False)),
+                    persistent=persistent,
+                )
+            elif act == "click":
+                ok = click(
+                    int(step["x"]),
+                    int(step["y"]),
+                    button=step.get("button", "left"),
+                    double=bool(step.get("double", False)),
+                    persistent=persistent,
+                )
+            elif act == "click_text":
+                ok = click_text(
+                    step["text"],
+                    window=step.get("window"),
+                    double=bool(step.get("double", False)),
+                    right=(step.get("button") == "right" or bool(step.get("right", False))),
+                    lang=step.get("lang"),
+                    persistent=persistent,
+                )
+            elif act == "click_element":
+                ok = click_element(
+                    step.get("text") or step.get("query"),
+                    window=step.get("window"),
+                    button=step.get("button", "left"),
+                    double=bool(step.get("double", False)),
+                    ocr_fallback=bool(step.get("ocr_fallback", True)),
+                    persistent=persistent,
+                )
+            elif act == "click_mark":
+                ok = click_mark(
+                    int(step["id"]),
+                    map_path=step.get("map_path", "/tmp/ag_som_map.json"),
+                    button=step.get("button", "left"),
+                    double=bool(step.get("double", False)),
+                    persistent=persistent,
+                )
+            elif act == "click_icon":
+                ok = click_icon(
+                    step["template"],
+                    window=step.get("window"),
+                    threshold=float(step.get("threshold", 0.82)),
+                    button=step.get("button", "left"),
+                    double=bool(step.get("double", False)),
+                    persistent=persistent,
+                )
+            elif act == "replace_text":
+                ok = replace_text(
+                    step["text"],
+                    x=step.get("x"),
+                    y=step.get("y"),
+                    select_width=int(step.get("width", step.get("select_width", 90))),
+                    delay=float(step.get("delay", 0.015)),
+                    clear_mode=step.get("clear_mode", "auto"),
+                    persistent=persistent,
+                )
+            elif act == "drag":
+                ok = drag(
+                    int(step["start_x"]),
+                    int(step["start_y"]),
+                    int(step["end_x"]),
+                    int(step["end_y"]),
+                    duration=float(step.get("duration", 0.4)),
+                    persistent=persistent,
+                )
+            elif act == "scroll":
+                ok = scroll(
+                    int(step["amount"]),
+                    x=step.get("x"),
+                    y=step.get("y"),
+                    persistent=persistent,
+                )
+            elif act == "type":
+                ok = type_text(step["text"], delay=float(step.get("delay", 0.005)))
+            elif act == "key":
+                ok = press_key(step["key"])
+            elif act == "hotkey":
+                ks = step["keys"]
+                if isinstance(ks, (list, tuple)):
+                    ok = hotkey(*ks)
+                else:
+                    ok = hotkey(ks)
+            elif act == "wait":
+                time.sleep(float(step.get("seconds", 0.25)))
+                ok = True
+            elif act == "wait_text":
+                ok, elapsed = wait_for_text(
+                    step["text"],
+                    timeout=float(step.get("timeout", 10.0)),
+                    window=step.get("window"),
+                    lang=step.get("lang"),
+                )
+                detail = f"elapsed={elapsed:.2f}s"
+            elif act == "wait_change":
+                ok, elapsed = wait_for_change(
+                    timeout=float(step.get("timeout", 5.0)),
+                    window=step.get("window"),
+                )
+                detail = f"elapsed={elapsed:.2f}s"
+            elif act == "screenshot":
+                detail = take_screenshot(step.get("path", "/tmp/ag_screen.png"))
+                ok = bool(detail)
+            elif act == "copy_image":
+                ok, detail = copy_image_to_clipboard(step["path"])
+            else:
+                detail = f"Unknown action '{act}'"
+                ok = False
+        except Exception as exc:
+            ok = False
+            detail = str(exc)
+
+        results.append({
+            "step": idx,
+            "action": act,
+            "ok": ok,
+            "ms": round((time.time() - t0) * 1000.0, 1),
+            "detail": detail,
+        })
+        if not ok and step.get("stop_on_fail", True):
+            return {
+                "success": False,
+                "failed_step": idx,
+                "total_ms": round((time.time() - t_total) * 1000.0, 1),
+                "steps": results,
+            }
+
+        if stop_on_popup and act in ("click", "click_text", "click_element", "click_mark", "click_icon", "key", "replace_text"):
+            cur_x11 = set(_list_x11_windows())
+            new_wins = list(cur_x11 - base_x11)
+            if not new_wins:
+                cur_atspi = {(w.get("app", ""), w.get("title", "")) for w in find_windows()}
+                diff_atspi = cur_atspi - base_atspi
+                if diff_atspi:
+                    new_wins = [f"{a}: {t}" for a, t in diff_atspi]
+            if new_wins:
+                return {
+                    "success": False,
+                    "popup_detected": True,
+                    "new_windows": new_wins,
+                    "stopped_after_step": idx,
+                    "total_ms": round((time.time() - t_total) * 1000.0, 1),
+                    "steps": results,
+                }
+
+    return {
+        "success": True,
+        "total_ms": round((time.time() - t_total) * 1000.0, 1),
+        "steps": results,
+    }
+
+
+# ---------------------------------------------------------------------------
+# CLI Entrypoint
+# ---------------------------------------------------------------------------
+
+def main():
+    parser = argparse.ArgumentParser(description="Antigravity Linux GUI Automation Tool (v2.1)")
+    subparsers = parser.add_subparsers(dest="cmd")
+
+    p_screen = subparsers.add_parser("screenshot")
+    p_screen.add_argument("path", nargs="?", default="/tmp/ag_screen.png")
+
+    p_sw = subparsers.add_parser("screenshot-window")
+    p_sw.add_argument("title", nargs="?", default=None)
+    p_sw.add_argument("--output", default="/tmp/ag_window.png")
+
+    p_ct = subparsers.add_parser("click-text")
+    p_ct.add_argument("text")
+    p_ct.add_argument("--window", default=None)
+    p_ct.add_argument("--double", action="store_true")
+    p_ct.add_argument("--right", action="store_true")
+    p_ct.add_argument("--lang", default=None)
+
+    p_ce = subparsers.add_parser("click-element")
+    p_ce.add_argument("text")
+    p_ce.add_argument("--window", default=None)
+    p_ce.add_argument("--button", default="left")
+    p_ce.add_argument("--double", action="store_true")
+    p_ce.add_argument("--no-ocr-fallback", action="store_true")
+
+    p_cm = subparsers.add_parser("click-mark")
+    p_cm.add_argument("mark_id", type=int)
+    p_cm.add_argument("--map", default="/tmp/ag_som_map.json")
+    p_cm.add_argument("--button", default="left")
+    p_cm.add_argument("--double", action="store_true")
+
+    p_fi = subparsers.add_parser("find-icon")
+    p_fi.add_argument("template")
+    p_fi.add_argument("--window", default=None)
+    p_fi.add_argument("--threshold", type=float, default=0.82)
+
+    p_cik = subparsers.add_parser("click-icon")
+    p_cik.add_argument("template")
+    p_cik.add_argument("--window", default=None)
+    p_cik.add_argument("--threshold", type=float, default=0.82)
+    p_cik.add_argument("--button", default="left")
+    p_cik.add_argument("--double", action="store_true")
+
+    p_som = subparsers.add_parser("som-inspect")
+    p_som.add_argument("title", nargs="?", default=None)
+    p_som.add_argument("--output", default="/tmp/ag_som.png")
+    p_som.add_argument("--map", default="/tmp/ag_som_map.json")
+    p_som.add_argument("--lang", default="eng")
+
+    p_fe = subparsers.add_parser("find-elements")
+    p_fe.add_argument("query", nargs="?", default=None)
+    p_fe.add_argument("--window", default=None)
+
+    p_ft = subparsers.add_parser("find-text")
+    p_ft.add_argument("text")
+    p_ft.add_argument("--screenshot", default=None)
+    p_ft.add_argument("--lang", default=None)
+
+    p_click = subparsers.add_parser("click")
+    p_click.add_argument("x", type=int)
+    p_click.add_argument("y", type=int)
+    p_click.add_argument("--button", default="left")
+    p_click.add_argument("--double", action="store_true")
+
+    p_cv = subparsers.add_parser("click-verify")
+    p_cv.add_argument("x", type=int)
+    p_cv.add_argument("y", type=int)
+    p_cv.add_argument("--button", default="left")
+    p_cv.add_argument("--double", action="store_true")
+
+    p_drag = subparsers.add_parser("drag")
+    p_drag.add_argument("start_x", type=int)
+    p_drag.add_argument("start_y", type=int)
+    p_drag.add_argument("end_x", type=int)
+    p_drag.add_argument("end_y", type=int)
+    p_drag.add_argument("--duration", type=float, default=0.4)
+
+    p_scroll = subparsers.add_parser("scroll")
+    p_scroll.add_argument("amount", type=int)
+    p_scroll.add_argument("--x", type=int, default=None)
+    p_scroll.add_argument("--y", type=int, default=None)
+
+    p_og = subparsers.add_parser("overlay-grid")
+    p_og.add_argument("image_path")
+    p_og.add_argument("--output", default="/tmp/ag_grid.png")
+    p_og.add_argument("--step", type=int, default=80)
+
+    p_wft = subparsers.add_parser("wait-for-text")
+    p_wft.add_argument("text")
+    p_wft.add_argument("--window", default=None)
+    p_wft.add_argument("--timeout", type=float, default=10.0)
+    p_wft.add_argument("--lang", default=None)
+
+    p_wfc = subparsers.add_parser("wait-for-change")
+    p_wfc.add_argument("--window", default=None)
+    p_wfc.add_argument("--timeout", type=float, default=5.0)
+
+    p_ci = subparsers.add_parser("copy-image")
+    p_ci.add_argument("image_path")
+
+    p_iw = subparsers.add_parser("inspect-window")
+    p_iw.add_argument("title", nargs="?", default=None)
+    p_iw.add_argument("--output", default="/tmp/ag_inspect_crop.png")
+    p_iw.add_argument("--lang", default="eng")
+
+    p_type = subparsers.add_parser("type")
+    p_type.add_argument("text")
+    p_type.add_argument("--delay", type=float, default=0.005)
+
+    p_rep = subparsers.add_parser("replace-text")
+    p_rep.add_argument("text")
+    p_rep.add_argument("--x", type=int, default=None)
+    p_rep.add_argument("--y", type=int, default=None)
+    p_rep.add_argument("--width", type=int, default=90)
+    p_rep.add_argument("--delay", type=float, default=0.015)
+
+    p_key = subparsers.add_parser("key")
+    p_key.add_argument("key_name")
+
+    p_hk = subparsers.add_parser("hotkey")
+    p_hk.add_argument("keys", nargs="+")
+
+    p_foc = subparsers.add_parser("focus")
+    p_foc.add_argument("title")
+    p_foc.add_argument("--maximize", action="store_true")
+
+    p_max = subparsers.add_parser("maximize")
+    p_max.add_argument("title", nargs="?", default=None)
+    p_max.add_argument("--fullscreen", action="store_true")
+
+    p_batch = subparsers.add_parser("batch")
+    p_batch.add_argument("steps_json", help="JSON array of step dicts")
+    p_batch.add_argument("--guard", default=None, help="Focus Guard window/app name")
+    p_batch.add_argument("--stop-on-popup", action="store_true")
+
+    subparsers.add_parser("focused")
+    subparsers.add_parser("windows")
+    subparsers.add_parser("display-info")
+
+    args = parser.parse_args()
+
+    if args.cmd == "screenshot":
+        print(f"Screenshot saved to {take_screenshot(args.path)}")
+
+    elif args.cmd == "screenshot-window":
+        out_path, win_info = screenshot_window(args.title, save_path=args.output)
+        print(f"Cropped window '{win_info.get('title')}' saved to {out_path} (Rect: {win_info.get('rect')})")
+
+    elif args.cmd == "click-text":
+        ok = click_text(
+            args.text,
+            window=args.window,
+            double=args.double,
+            right=args.right,
+            lang=args.lang,
+            persistent=False,
+        )
+        sys.exit(0 if ok else 1)
+
+    elif args.cmd == "click-element":
+        ok = click_element(
+            args.text,
+            window=args.window,
+            button=args.button,
+            double=args.double,
+            ocr_fallback=not args.no_ocr_fallback,
+            persistent=False,
+        )
+        sys.exit(0 if ok else 1)
+
+    elif args.cmd == "click-mark":
+        ok = click_mark(args.mark_id, map_path=args.map, button=args.button, double=args.double, persistent=False)
+        sys.exit(0 if ok else 1)
+
+    elif args.cmd == "find-icon":
+        m = find_icon(args.template, window=args.window, threshold=args.threshold)
+        print(json.dumps(m, indent=2))
+        sys.exit(0 if m else 1)
+
+    elif args.cmd == "click-icon":
+        ok = click_icon(args.template, window=args.window, threshold=args.threshold, button=args.button, double=args.double, persistent=False)
+        sys.exit(0 if ok else 1)
+
+    elif args.cmd == "som-inspect":
+        res = som_inspect(args.title, output_path=args.output, map_path=args.map, lang=args.lang, persistent=False)
+        print(json.dumps(res, indent=2, ensure_ascii=False))
+        sys.exit(0)
+
+    elif args.cmd == "find-elements":
+        els = find_elements(query=args.query, window=args.window)
+        print(json.dumps(els, indent=2, ensure_ascii=False))
+        sys.exit(0 if els else 1)
+
+    elif args.cmd == "find-text":
+        matches = find_text_on_screen(args.text, screenshot_path=args.screenshot, lang=args.lang)
+        if not matches:
+            print(f"No occurrences of '{args.text}' found.")
+            sys.exit(1)
+        for m in matches:
+            print(
+                f"Match: '{m['text']}' at Center: ({m['center_x']}, {m['center_y']}), "
+                f"Box: ({m['x']}, {m['y']}, {m['w']}, {m['h']}), Conf: {m['conf']}, Score: {m['score']}"
+            )
+
+    elif args.cmd == "click":
+        sys.exit(0 if click(args.x, args.y, button=args.button, double=args.double, persistent=False) else 1)
+
+    elif args.cmd == "click-verify":
+        res = click_verify(args.x, args.y, button=args.button, double=args.double, persistent=False)
+        print(json.dumps(res, indent=2))
+        sys.exit(0 if res.get("success") else 1)
+
+    elif args.cmd == "drag":
+        ok = drag(args.start_x, args.start_y, args.end_x, args.end_y, duration=args.duration, persistent=False)
+        if ok:
+            print(f"Dragged from ({args.start_x}, {args.start_y}) to ({args.end_x}, {args.end_y})")
+        sys.exit(0 if ok else 1)
+
+    elif args.cmd == "scroll":
+        ok = scroll(args.amount, x=args.x, y=args.y, persistent=False)
+        sys.exit(0 if ok else 1)
+
+    elif args.cmd == "overlay-grid":
+        out = overlay_grid(args.image_path, output_path=args.output, step=args.step)
+        print(f"Grid overlay saved to {out} (size: {os.path.getsize(out)} bytes)")
+
+    elif args.cmd == "wait-for-text":
+        found, elapsed = wait_for_text(args.text, timeout=args.timeout, window=args.window, lang=args.lang)
+        if found:
+            print(f"Text '{args.text}' found in {elapsed:.2f}s")
+            sys.exit(0)
+        print(f"Timed out after {args.timeout}s waiting for '{args.text}'", file=sys.stderr)
+        sys.exit(1)
+
+    elif args.cmd == "wait-for-change":
+        changed, elapsed = wait_for_change(timeout=args.timeout, window=args.window)
+        if changed:
+            print(f"Visual change detected in {elapsed:.2f}s")
+            sys.exit(0)
+        print(f"Timed out after {args.timeout}s waiting for visual change", file=sys.stderr)
+        sys.exit(1)
+
+    elif args.cmd == "copy-image":
+        ok, msg = copy_image_to_clipboard(args.image_path)
+        print(msg)
+        sys.exit(0 if ok else 1)
+
+    elif args.cmd == "inspect-window":
+        res = inspect_window(args.title, save_path=args.output, lang=args.lang, persistent=False)
+        print(json.dumps(res, indent=2, ensure_ascii=False))
+        sys.exit(0)
+
+    elif args.cmd == "type":
+        sys.exit(0 if type_text(args.text, delay=args.delay) else 1)
+
+    elif args.cmd == "replace-text":
+        sys.exit(0 if replace_text(args.text, x=args.x, y=args.y, select_width=args.width, delay=args.delay, persistent=False) else 1)
+
+    elif args.cmd == "key":
+        sys.exit(0 if press_key(args.key_name) else 1)
+
+    elif args.cmd == "hotkey":
+        sys.exit(0 if hotkey(*args.keys) else 1)
+
+    elif args.cmd == "focus":
+        ok = focus_window(args.title, persistent=False, maximize=args.maximize)
+        print(f"Brought window matching '{args.title}' to front." if ok else f"Could not find '{args.title}'.")
+        sys.exit(0 if ok else 1)
+
+    elif args.cmd == "maximize":
+        ok = maximize_window(args.title, fullscreen=args.fullscreen, persistent=False)
+        sys.exit(0 if ok else 1)
+
+    elif args.cmd == "batch":
+        steps = json.loads(args.steps_json)
+        res = run_batch(steps, persistent=True, guard_window=args.guard, stop_on_popup=args.stop_on_popup)
+        if _POINTER_SINGLETON is not None:
+            _POINTER_SINGLETON.close()
+        print(json.dumps(res, indent=2, ensure_ascii=False))
+        sys.exit(0 if res.get("success") else 1)
+
+    elif args.cmd == "focused":
+        print(json.dumps(get_focused_window_info(), indent=2, ensure_ascii=False))
+
+    elif args.cmd == "windows":
+        print(json.dumps(find_windows(), indent=2, ensure_ascii=False))
+
+    elif args.cmd == "display-info":
+        print(get_display_info())
+
+    else:
+        parser.print_help()
+
+
+if __name__ == "__main__":
+    main()

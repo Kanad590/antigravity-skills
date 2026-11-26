@@ -1,0 +1,704 @@
+#!/usr/bin/env -S uv run --with "mcp<2" python3
+"""
+Linux Desktop Apps Controller MCP Server (v2.0)
+Provides high-speed in-process desktop GUI automation (Wayland UInput, AT-SPI widgets,
+dark-mode-aware OCR, batch macro runner), media playback, system volume, notifications,
+and clipboard control on Pop!_OS COSMIC Wayland & Xwayland.
+"""
+import os
+import re
+import json
+import glob
+import time
+import subprocess
+import importlib.util
+import importlib.machinery
+from typing import List, Optional, Dict, Any
+from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP("linux-desktop-apps")
+
+_AG_MOD = None
+
+
+def _ag():
+    """Lazy-loads /home/saman/.local/bin/ag-gui in-process once (0ms subprocess overhead)."""
+    global _AG_MOD
+    if _AG_MOD is not None:
+        return _AG_MOD
+    ag_path = "/home/saman/.local/bin/ag-gui"
+    loader = importlib.machinery.SourceFileLoader("ag_gui_engine", ag_path)
+    spec = importlib.util.spec_from_loader("ag_gui_engine", loader)
+    mod = importlib.util.module_from_spec(spec)
+    loader.exec_module(mod)
+    _AG_MOD = mod
+    return _AG_MOD
+
+
+DESKTOP_DIRS = [
+    "/usr/share/applications",
+    os.path.expanduser("~/.local/share/applications"),
+    "/var/lib/flatpak/exports/share/applications",
+    os.path.expanduser("~/.local/share/flatpak/exports/share/applications"),
+]
+
+
+def _find_desktop_files():
+    apps = []
+    seen = set()
+    for d in DESKTOP_DIRS:
+        if not os.path.exists(d):
+            continue
+        for f in glob.glob(os.path.join(d, "*.desktop")):
+            app_id = os.path.splitext(os.path.basename(f))[0]
+            if app_id in seen:
+                continue
+            seen.add(app_id)
+            name = None
+            comment = ""
+            nodisplay = False
+            try:
+                with open(f, "r", encoding="utf-8", errors="ignore") as fp:
+                    for line in fp:
+                        line = line.strip()
+                        if line.startswith("Name=") and not name:
+                            name = line.split("=", 1)[1]
+                        elif line.startswith("Comment=") and not comment:
+                            comment = line.split("=", 1)[1]
+                        elif line == "NoDisplay=true":
+                            nodisplay = True
+            except Exception:
+                pass
+            if name and not nodisplay:
+                apps.append({
+                    "id": app_id,
+                    "name": name,
+                    "comment": comment,
+                    "path": f,
+                })
+    return sorted(apps, key=lambda x: x["name"].lower())
+
+
+@mcp.tool()
+def list_desktop_apps(filter_query: str = "") -> List[dict]:
+    """
+    List installed desktop applications (Spotify, Telegram, Obsidian, VS Code, VLC, Chrome, GIMP, etc.).
+    Optionally filter by name or keyword.
+    """
+    apps = _find_desktop_files()
+    if not filter_query:
+        return apps
+    q = filter_query.lower()
+    return [a for a in apps if q in a["name"].lower() or q in a["id"].lower() or q in a["comment"].lower()]
+
+
+@mcp.tool()
+def launch_app(app_name_or_id: str, arguments: Optional[List[str]] = None) -> str:
+    """
+    Launch any installed desktop application (e.g. 'spotify', 'telegram', 'vlc', 'obsidian', 'chrome', 'code', 'gimp').
+    Accepts app name or desktop ID and launches it detached in the user's desktop session.
+    """
+    query = app_name_or_id.lower().strip()
+    apps = _find_desktop_files()
+
+    target = None
+    for a in apps:
+        if a["id"].lower() == query or a["name"].lower() == query:
+            target = a
+            break
+
+    if not target:
+        for a in apps:
+            if query in a["id"].lower() or query in a["name"].lower():
+                target = a
+                break
+
+    args = arguments or []
+    env = _ag().get_desktop_env()
+
+    if target:
+        cmd = ["gio", "launch", target["path"]] + args
+        try:
+            subprocess.Popen(cmd, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+            return f"Successfully launched {target['name']} ({target['id']}) via desktop entry."
+        except Exception as e:
+            return f"Error launching via desktop entry: {e}"
+
+    try:
+        cmd = [app_name_or_id] + args
+        subprocess.Popen(cmd, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+        return f"Successfully launched binary command '{app_name_or_id}'."
+    except Exception as e:
+        return f"Could not find or launch '{app_name_or_id}'. Try searching with list_desktop_apps(). Error: {e}"
+
+
+@mcp.tool()
+def close_app(process_or_app_name: str) -> str:
+    """
+    Close or terminate a running desktop application by its name or process name (e.g., 'spotify', 'vlc', 'chrome').
+    """
+    name = process_or_app_name.strip()
+    try:
+        res = subprocess.run(["pkill", "-f", name], capture_output=True, text=True)
+        if res.returncode == 0:
+            return f"Closed processes matching '{name}'."
+        return f"No active process found matching '{name}'."
+    except Exception as e:
+        return f"Error closing app: {e}"
+
+
+@mcp.tool()
+def media_control(action: str, player: Optional[str] = None) -> str:
+    """
+    Control playback across all active desktop media apps (Spotify, Feishin, VLC, Chromium, Firefox, Blanket, KDE Connect).
+    action: 'play', 'pause', 'play-pause', 'next', 'previous', 'stop', 'status', 'metadata', 'list-players'.
+    player: optional player name (e.g. 'spotify', 'feishin', 'vlc', 'chromium'). Leave empty to control active player.
+    """
+    act = action.lower().strip()
+    env = _ag().get_desktop_env()
+    base_cmd = ["playerctl"]
+    if player:
+        base_cmd.extend(["-p", player])
+
+    if act == "list-players":
+        res = subprocess.run(["playerctl", "-l"], env=env, capture_output=True, text=True)
+        players = [p.strip() for p in res.stdout.strip().split("\n") if p.strip()]
+        return f"Active media players: {', '.join(players) if players else 'None currently playing'}"
+
+    if act == "status":
+        res = subprocess.run(base_cmd + ["status"], env=env, capture_output=True, text=True)
+        return res.stdout.strip() or "No player active"
+
+    if act == "metadata":
+        res = subprocess.run(
+            base_cmd + ["metadata", "--format", "{{artist}} - {{title}} [{{album}}] ({{duration(position)}}/{{duration(mpris:length)}})"],
+            env=env,
+            capture_output=True,
+            text=True,
+        )
+        meta = res.stdout.strip()
+        if not meta:
+            res_raw = subprocess.run(base_cmd + ["metadata"], env=env, capture_output=True, text=True)
+            meta = res_raw.stdout.strip()
+        return meta or "No track playing"
+
+    if act in ["play", "pause", "play-pause", "next", "previous", "stop"]:
+        res = subprocess.run(base_cmd + [act], env=env, capture_output=True, text=True)
+        if res.returncode == 0:
+            status_res = subprocess.run(base_cmd + ["status"], env=env, capture_output=True, text=True)
+            meta_res = subprocess.run(base_cmd + ["metadata", "--format", "{{artist}} - {{title}}"], env=env, capture_output=True, text=True)
+            return f"Action '{act}' succeeded. State: {status_res.stdout.strip()}. Now: {meta_res.stdout.strip()}"
+        return f"Action '{act}' failed: {res.stderr.strip()}"
+
+    return f"Unknown action: '{action}'. Choose from: play, pause, play-pause, next, previous, stop, status, metadata, list-players."
+
+
+@mcp.tool()
+def media_volume(level: Optional[float] = None, step: Optional[float] = None, player: Optional[str] = None) -> str:
+    """
+    Get or set volume of media player (Spotify, VLC, Feishin, etc.) via playerctl.
+    level: volume from 0.0 to 1.0 (e.g. 0.8 for 80%).
+    step: step change (e.g. +0.05 or -0.05).
+    player: optional player name.
+    """
+    env = _ag().get_desktop_env()
+    base_cmd = ["playerctl"]
+    if player:
+        base_cmd.extend(["-p", player])
+
+    if level is not None:
+        val = max(0.0, min(1.0, float(level)))
+        subprocess.run(base_cmd + ["volume", str(val)], env=env, capture_output=True, text=True)
+        return f"Set media volume to {int(val * 100)}%."
+
+    if step is not None:
+        sign = "+" if step > 0 else ""
+        subprocess.run(base_cmd + ["volume", f"{sign}{step}"], env=env, capture_output=True, text=True)
+        return f"Adjusted media volume by {step}."
+
+    res = subprocess.run(base_cmd + ["volume"], env=env, capture_output=True, text=True)
+    try:
+        vol = float(res.stdout.strip())
+        return f"Current media volume: {int(vol * 100)}%"
+    except Exception:
+        return f"Volume output: {res.stdout.strip()}"
+
+
+@mcp.tool()
+def system_volume(level_percent: Optional[int] = None, toggle_mute: bool = False) -> str:
+    """
+    Get or set system master audio volume (PipeWire/WirePlumber) and toggle mute.
+    level_percent: integer percentage (0 to 100, e.g. 50).
+    toggle_mute: if True, toggles audio mute.
+    """
+    env = _ag().get_desktop_env()
+    if toggle_mute:
+        subprocess.run(["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "toggle"], env=env, capture_output=True)
+        return "Toggled system audio mute."
+
+    if level_percent is not None:
+        pct = max(0, min(150, int(level_percent)))
+        val = pct / 100.0
+        subprocess.run(["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", str(val)], env=env, capture_output=True)
+        return f"Set system master volume to {pct}%."
+
+    res = subprocess.run(["wpctl", "get-volume", "@DEFAULT_AUDIO_SINK@"], env=env, capture_output=True, text=True)
+    return res.stdout.strip() or "Could not read system volume."
+
+
+@mcp.tool()
+def send_desktop_notification(title: str, message: str, urgency: str = "normal") -> str:
+    """
+    Display a native desktop notification banner on Pop!_OS.
+    urgency: 'low', 'normal', or 'critical'.
+    """
+    u = urgency if urgency in ["low", "normal", "critical"] else "normal"
+    try:
+        subprocess.run(
+            ["notify-send", "-u", u, "-a", "Antigravity Assistant", title, message],
+            env=_ag().get_desktop_env(),
+            capture_output=True,
+        )
+        return f"Notification sent: '{title}' - '{message}'"
+    except Exception as e:
+        return f"Failed to send notification: {e}"
+
+
+@mcp.tool()
+def get_clipboard() -> str:
+    """Read current text content from the desktop clipboard (Wayland / X11)."""
+    env = _ag().get_desktop_env()
+    try:
+        res = subprocess.run(["wl-paste", "--no-newline"], env=env, capture_output=True, text=True, timeout=2)
+        if res.returncode == 0:
+            return res.stdout
+    except Exception:
+        pass
+    try:
+        res = subprocess.run(["xclip", "-selection", "clipboard", "-o"], env=env, capture_output=True, text=True, timeout=2)
+        if res.returncode == 0:
+            return res.stdout
+    except Exception:
+        pass
+    return "Clipboard is empty or inaccessible."
+
+
+@mcp.tool()
+def set_clipboard(text: str) -> str:
+    """Copy text into the desktop clipboard (Wayland / X11) without pipe hangs."""
+    env = _ag().get_desktop_env()
+    copied = False
+    try:
+        res = subprocess.run(
+            ["wl-copy"],
+            input=text.encode("utf-8"),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            close_fds=True,
+            env=env,
+            timeout=2,
+        )
+        if res.returncode == 0:
+            copied = True
+    except Exception:
+        pass
+
+    if not copied:
+        try:
+            res = subprocess.run(
+                ["xclip", "-selection", "clipboard"],
+                input=text.encode("utf-8"),
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                close_fds=True,
+                env=env,
+                timeout=2,
+            )
+            if res.returncode == 0:
+                copied = True
+        except Exception:
+            pass
+
+    if copied:
+        return f"Copied {len(text)} characters to clipboard."
+    return "Failed to copy to clipboard."
+
+
+@mcp.tool()
+def list_running_windows() -> str:
+    """
+    List visible Wayland & Xwayland windows (AT-SPI + wmctrl) plus active desktop GUI apps.
+    """
+    ag = _ag()
+    wins = ag.find_windows()
+    lines = []
+    for w in wins:
+        tag = " [ACTIVE]" if w.get("active") else ""
+        lines.append(f"[{w['source']}] {w['app']} | {w['title']} | rect={w['rect']}{tag}")
+
+    # Also list active AT-SPI registered apps (including tray/minimized)
+    Atspi = ag._get_atspi()
+    atspi_apps = []
+    if Atspi is not None:
+        try:
+            d = Atspi.get_desktop(0)
+            for i in range(d.get_child_count()):
+                c = d.get_child_at_index(i)
+                if c and c.get_name():
+                    atspi_apps.append(c.get_name().strip())
+        except Exception:
+            pass
+
+    res = subprocess.run(
+        ["ps", "-u", os.getenv("USER", "saman"), "-o", "comm", "--sort=-%mem"],
+        capture_output=True,
+        text=True,
+    )
+    top_procs = list(dict.fromkeys([l.strip() for l in res.stdout.split("\n")[1:30] if l.strip()]))[:15]
+
+    out = []
+    if lines:
+        out.append("Visible Windows:\n" + "\n".join(lines))
+    if atspi_apps:
+        out.append("AT-SPI Apps: " + ", ".join(dict.fromkeys(atspi_apps)))
+    out.append("Top User Processes: " + ", ".join(top_procs))
+    return "\n\n".join(out)
+
+
+@mcp.tool()
+def gui_click_text(text: str, double_click: bool = False, right_click: bool = False) -> str:
+    """
+    Visually search for any word or button label on the screen using fast dark-mode-aware OCR
+    and click its center point natively on Wayland & Xwayland.
+    """
+    ag = _ag()
+    ok = ag.click_text(text, double=double_click, right=right_click, persistent=True)
+    if ok:
+        return f"Successfully clicked on text '{text}'."
+    return f"Failed to locate or click text '{text}'."
+
+
+@mcp.tool()
+def gui_click_coords(x: int, y: int, button: str = "left", double_click: bool = False) -> str:
+    """
+    Click at specific (x, y) screen coordinates natively across Wayland & Xwayland via kernel UInput.
+    """
+    ok = _ag().click(x, y, button=button, double=double_click, persistent=True)
+    if ok:
+        return f"Successfully clicked at ({x}, {y}) with button '{button}'"
+    return f"Failed to click at ({x}, {y})"
+
+
+@mcp.tool()
+def gui_type(text: str) -> str:
+    """
+    Type text into the currently active or focused window using native Wayland virtual keyboard (wtype).
+    """
+    ok = _ag().type_text(text)
+    if ok:
+        return f"Typed {len(text)} characters into active window."
+    return "Failed to type text."
+
+
+@mcp.tool()
+def gui_hotkey(keys: str) -> str:
+    """
+    Press keyboard shortcut combinations (e.g. 'ctrl o', 'alt f4', 'ctrl+a', 'enter', 'escape').
+    Automatically normalizes key aliases ('enter'->'Return', 'esc'->'Escape').
+    """
+    ok = _ag().hotkey(keys)
+    if ok:
+        return f"Pressed hotkey combo: {keys}"
+    return f"Failed to send hotkey: {keys}"
+
+
+@mcp.tool()
+def gui_find_text(text: str) -> str:
+    """
+    Locate text visually on screen using fast dark-mode-aware OCR and return ranked bounding boxes.
+    """
+    matches = _ag().find_text_on_screen(text)
+    if not matches:
+        return f"No occurrences of '{text}' found."
+    return "\n".join(
+        f"Match: '{m['text']}' at Center: ({m['center_x']}, {m['center_y']}), "
+        f"Box: ({m['x']}, {m['y']}, {m['w']}, {m['h']}), Conf: {m['conf']}, Score: {m['score']}"
+        for m in matches
+    )
+
+
+@mcp.tool()
+def gui_find_elements(query: Optional[str] = None, window_title: Optional[str] = None) -> List[dict]:
+    """
+    Discover interactive UI widgets (buttons, inputs, tabs, menus, links) directly via AT-SPI (~50-250ms,
+    zero OCR needed). Optionally filter by text query and/or window_title.
+    """
+    return _ag().find_elements(query=query, window=window_title)
+
+
+@mcp.tool()
+def gui_click_element(
+    query: str,
+    window_title: Optional[str] = None,
+    button: str = "left",
+    double: bool = False,
+) -> str:
+    """
+    Click a UI button, menu item, tab, or field using AT-SPI first (~50-250ms),
+    automatically falling back to fast Smart OCR if the app does not expose AT-SPI widgets.
+    """
+    ok = _ag().click_element(query=query, window=window_title, button=button, double=double, ocr_fallback=True, persistent=True)
+    if ok:
+        return f"Successfully clicked element '{query}'."
+    return f"Failed to locate or click element '{query}'."
+
+
+@mcp.tool()
+def gui_focus_window(title: str, maximize: bool = False) -> str:
+    """
+    Bring an open application window to the front (and optionally maximize it).
+    """
+    ok = _ag().focus_window(title, persistent=True, maximize=maximize)
+    if ok:
+        return f"Successfully brought window matching '{title}' to front."
+    return f"Failed to focus window matching '{title}'."
+
+
+@mcp.tool()
+def gui_maximize_window(window_title: Optional[str] = None, fullscreen: bool = False) -> str:
+    """
+    Idempotently maximize (or fullscreen) the target or active window across Wayland & Xwayland.
+    """
+    ok = _ag().maximize_window(window_title, fullscreen=fullscreen, persistent=True)
+    if ok:
+        return f"Successfully {'fullscreened' if fullscreen else 'maximized'} window."
+    return "Failed to maximize window."
+
+
+@mcp.tool()
+def gui_replace_text(text: str, x: Optional[int] = None, y: Optional[int] = None, width: int = 90) -> str:
+    """
+    Safely replace existing text in any input box (supports both modern apps and legacy Win32/Wine
+    apps via drag-select + BackSpace).
+    """
+    ok = _ag().replace_text(text, x=x, y=y, select_width=width, persistent=True)
+    if ok:
+        return f"Replaced field text with {len(text)} characters."
+    return "Failed to replace text."
+
+
+@mcp.tool()
+def gui_take_screenshot(save_path: str = "/tmp/ag_screen.png") -> str:
+    """
+    Take a fast (~77ms) full-desktop screenshot on Pop!_OS COSMIC Wayland without /tmp clutter.
+    """
+    try:
+        out = _ag().take_screenshot(save_path)
+        if os.path.exists(out):
+            return f"Screenshot successfully saved to {out}"
+    except Exception as e:
+        return f"Failed to take screenshot: {e}"
+    return "Failed to take screenshot."
+
+
+@mcp.tool()
+def gui_scroll(amount: int, x: Optional[int] = None, y: Optional[int] = None) -> str:
+    """
+    Scroll mouse wheel up (positive amount, e.g. 5) or down (negative amount, e.g. -5)
+    natively across Wayland & Xwayland. Optionally move pointer to (x, y) first.
+    """
+    ok = _ag().scroll(amount, x=x, y=y, persistent=True)
+    if ok:
+        return f"Scrolled mouse wheel by {amount} units."
+    return "Scroll failed."
+
+
+@mcp.tool()
+def gui_get_screen_size() -> str:
+    """Get screen resolution as 'width, height' (e.g. '1366, 768')."""
+    w, h = _ag().get_screen_resolution()
+    return f"{w}, {h}"
+
+
+@mcp.tool()
+def gui_get_mouse_position() -> str:
+    """Get current (x, y) coordinates of the mouse cursor (tracked UInput or Xwayland fallback)."""
+    ag = _ag()
+    ptr = ag._POINTER_SINGLETON
+    if ptr is not None and ptr._last_pos is not None:
+        return f"({ptr._last_pos[0]}, {ptr._last_pos[1]})"
+    pag = ag._get_pyautogui()
+    if pag:
+        try:
+            x, y = pag.position()
+            return f"({x}, {y})"
+        except Exception:
+            pass
+    return "Unknown mouse position"
+
+
+@mcp.tool()
+def gui_smart_click(target: str, window: Optional[str] = None, button: str = "left", double: bool = False) -> str:
+    """
+    Smart click on any screen element by text label (tries AT-SPI first, then fast Smart OCR)
+    or by coordinates (e.g. '500, 300' or '(500, 300)') with closed-loop visual delta verification.
+    """
+    ag = _ag()
+    m = re.match(r"^\(?\s*(\d+)\s*[,x\s]\s*(\d+)\s*\)?$", target.strip())
+    if m:
+        cx, cy = int(m.group(1)), int(m.group(2))
+        data = ag.click_verify(cx, cy, button=button, double=double, persistent=True)
+        return (
+            f"Clicked coordinates ({cx}, {cy}). "
+            f"Delta: {data.get('delta_percent', 0)}%, State changed: {data.get('state_changed', False)}"
+        )
+
+    ok = ag.click_element(target, window=window, button=button, double=double, ocr_fallback=True, persistent=True)
+    if ok:
+        return f"Successfully smart-clicked '{target}'."
+    return f"Failed to click '{target}': Element/Text not found"
+
+
+@mcp.tool()
+def gui_inspect_window(window_title: Optional[str] = None) -> dict:
+    """
+    Inspect an open application window: focuses it, crops screenshot to its exact bounds,
+    and returns both AT-SPI widgets and line-grouped OCR UI labels with center coordinates.
+    """
+    try:
+        return _ag().inspect_window(window_title, persistent=True)
+    except Exception as e:
+        return {"error": f"Failed to inspect window: {e}"}
+
+
+@mcp.tool()
+def gui_visual_grid_inspect(window_title: Optional[str] = None) -> str:
+    """
+    Captures the target application window (or active window) and overlays a high-contrast
+    alphanumeric coordinate grid (A1..Z10) at ~23 KB for icon-only or canvas apps.
+    """
+    ag = _ag()
+    crop_path = "/tmp/ag_grid_crop.png"
+    grid_path = "/tmp/ag_visual_grid.png"
+    try:
+        ag.screenshot_window(window_title, save_path=crop_path)
+        ag.overlay_grid(crop_path, output_path=grid_path)
+        return f"Annotated visual grid saved to {grid_path}. Size: {os.path.getsize(grid_path)} bytes."
+    except Exception as e:
+        return f"Failed to generate visual grid: {e}"
+
+
+@mcp.tool()
+def gui_drag_and_drop(start_x: int, start_y: int, end_x: int, end_y: int, duration: float = 0.5) -> str:
+    """Perform smooth Wayland + Xwayland mouse drag-and-drop between two coordinates."""
+    ok = _ag().drag(start_x, start_y, end_x, end_y, duration=duration, persistent=True)
+    if ok:
+        return f"Successfully dragged from ({start_x}, {start_y}) to ({end_x}, {end_y})."
+    return "Failed to drag."
+
+
+@mcp.tool()
+def gui_wait_for(text: Optional[str] = None, window_title: Optional[str] = None, timeout: int = 10) -> bool:
+    """
+    Deterministically wait for an application window, visual change, or specific text to appear
+    using fast pixel-diff gating before running OCR.
+    """
+    ag = _ag()
+    if text:
+        found, _ = ag.wait_for_text(text, timeout=float(timeout), window=window_title)
+        return found
+
+    if window_title:
+        start = time.time()
+        while time.time() - start < timeout:
+            if ag.find_windows(window_title):
+                return True
+            time.sleep(0.35)
+        return False
+
+    changed, _ = ag.wait_for_change(timeout=float(timeout))
+    return changed
+
+
+@mcp.tool()
+def gui_som_inspect(window_title: Optional[str] = None) -> dict:
+    """
+    Set-of-Mark (SoM) visual inspector: draws numbered badges [1], [2], ... onto the
+    window screenshot (/tmp/ag_som.png) and returns exact ID->coordinate mappings so you
+    can click any element cleanly with gui_click_mark(id).
+    """
+    try:
+        return _ag().som_inspect(window_title, persistent=True)
+    except Exception as e:
+        return {"error": f"SoM inspection failed: {e}"}
+
+
+@mcp.tool()
+def gui_click_mark(mark_id: int, button: str = "left", double: bool = False) -> str:
+    """
+    Click a Set-of-Mark element ID ([1], [2], ...) previously mapped by gui_som_inspect().
+    """
+    ok = _ag().click_mark(mark_id, button=button, double=double, persistent=True)
+    if ok:
+        return f"Clicked SoM mark [{mark_id}]."
+    return f"Failed to click SoM mark [{mark_id}]."
+
+
+@mcp.tool()
+def gui_click_icon(
+    template_path: str,
+    window_title: Optional[str] = None,
+    threshold: float = 0.82,
+    button: str = "left",
+    double: bool = False,
+) -> str:
+    """
+    Locate a textless toolbar/app icon using OpenCV multi-scale template matching and click its center.
+    """
+    ok = _ag().click_icon(
+        template_path,
+        window=window_title,
+        threshold=threshold,
+        button=button,
+        double=double,
+        persistent=True,
+    )
+    if ok:
+        return f"Clicked icon matching '{template_path}'."
+    return f"Failed to find or click icon '{template_path}'."
+
+
+@mcp.tool()
+def gui_batch(
+    steps: List[Dict[str, Any]],
+    guard_window: Optional[str] = None,
+    stop_on_popup: bool = False,
+) -> dict:
+    """
+    Execute a multi-step GUI macro sequence in ONE call with zero round-trip latency.
+    Supports: 'focus', 'maximize', 'click', 'click_element', 'click_text', 'click_mark',
+    'click_icon', 'replace_text', 'drag', 'scroll', 'type', 'key', 'hotkey', 'wait',
+    'wait_text', 'wait_change', 'screenshot', 'copy_image'.
+    Optional guard_window enables Focus Guard (aborts before typing/clicking if focus left target window).
+    Optional stop_on_popup halts immediately if an unexpected modal dialog appears.
+    """
+    return _ag().run_batch(steps, persistent=True, guard_window=guard_window, stop_on_popup=stop_on_popup)
+
+
+@mcp.tool()
+def gui_copy_image_to_clipboard(image_path: str) -> str:
+    """
+    Copy a local image file into the Wayland system clipboard as 'image/png' with zero hang.
+    """
+    ok, msg = _ag().copy_image_to_clipboard(image_path)
+    return msg if ok else f"Failed to copy image to clipboard: {msg}"
+
+
+@mcp.tool()
+def gui_get_display_info() -> str:
+    """Get native display resolution, refresh rate, and active scale factor from cosmic-randr."""
+    return _ag().get_display_info()
+
+
+if __name__ == "__main__":
+    mcp.run()
